@@ -34,15 +34,54 @@ func buildFriendsList(filePath string) (FriendsList, error) {
 	return friends, nil
 }
 
-func pickRandomFriend(friends FriendsList) (Friend, error) {
-	if len(friends) == 0 {
-		return Friend{}, errors.New("The friends list is empty")
-	}
-	seed := rand.NewSource(time.Now().Unix())
-	r := rand.New(seed)
-	randomIndex := r.Intn(len(friends))
+// Calculates the weight of each name based on how many days since last contacted
+// The longer the time since last contact, the higher the chance of them coming up in the selection
+func calculateWeight(lastContacted string, currDate time.Time) (int, error) {
+	layout := "02/01/2006" // Go layout string (use the reference date)
 
-	return friends[randomIndex], nil
+	lastContactedDate, err := time.Parse(layout, lastContacted)
+	if err != nil {
+		fmt.Println("Error parsing date:", err)
+		return 0, err
+	}
+
+	// Normalize both dates to the start of the day
+	lastContactedNormalised := time.Date(lastContactedDate.Year(), lastContactedDate.Month(), lastContactedDate.Day(), 0, 0, 0, 0, lastContactedDate.Location())
+	currDateNormalised := time.Date(currDate.Year(), currDate.Month(), currDate.Day(), 0, 0, 0, 0, currDate.Location())
+
+	// Calculate the difference in days
+	difference := currDateNormalised.Sub(lastContactedNormalised)
+	days := int(difference.Hours() / 24)
+
+	return days, nil
+}
+
+func pickRandomFriend(friends FriendsList) (Friend, error) {
+	totalWeight := 0
+	weights := make([]int, len(friends))
+
+	for i, friend := range friends {
+		weight, err := calculateWeight(friend.LastContacted, time.Now())
+		if err != nil {
+			return Friend{}, err
+		}
+		weights[i] = weight
+		totalWeight += weight
+	}
+
+	if totalWeight == 0 {
+		return Friend{}, errors.New("total weight is zero")
+	}
+
+	randIndex := rand.Intn(totalWeight)
+	for i, weight := range weights {
+		if randIndex < weight {
+			return friends[i], nil
+		}
+		randIndex -= weight
+	}
+
+	return Friend{}, errors.New("unable to select a random friend")
 }
 
 func main() {
