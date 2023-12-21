@@ -84,14 +84,45 @@ func pickRandomFriend(friends FriendsList) (Friend, error) {
 	return Friend{}, errors.New("unable to select a random friend")
 }
 
+func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
+	friend.LastContacted = todaysDate.Format("02/01/2006")
+
+	return friend
+}
+
+// SaveFriendsListToYAML serializes the FriendsList and saves it to a YAML file.
+func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
+	data, err := yaml.Marshal(friends)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, data, 0644)
+}
+
 func main() {
 
-	friendsList, err := buildFriendsList("config/friends.yaml")
+	var filePath = "config/friends.yaml"
+
+	friendsList, err := buildFriendsList(filePath)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
 
 	chosenFriend, err := pickRandomFriend(friendsList)
+
+	updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
+
+	for ind, friend := range friendsList {
+		if friend.Name == updatedChosenFriend.Name {
+			friendsList[ind] = updatedChosenFriend
+		}
+	}
+
+	err = SaveFriendsListToYAML(friendsList, filePath)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 
 	fmt.Printf("You should talk to %s who you last spoke to on %s", chosenFriend.Name, chosenFriend.LastContacted)
 }
