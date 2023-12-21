@@ -1,6 +1,6 @@
-johnwick:
-    name: John Wick
-    lastContacted: 06/06/2023
-peterparker:
-    name: Peter Parker
-    lastContacted: 12/12/2023
+- name: John Wick
+  lastContacted: 06/06/2023
+- name: Peter Parker
+  lastContacted: 12/12/2023
+- name: The Grinch
+  lastContacted: 25/12/2022
