@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -56,6 +57,50 @@ func TestCalculateWeight(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedWeight, weight)
+}
+
+func TestUpdateLastContact(t *testing.T) {
+	friend := Friend{Name: "Jimmy Neutron", LastContacted: "10/10/2023"}
+	todaysDate := time.Date(2023, time.December, 31, 0, 0, 0, 0, time.Local)
+
+	expectedResult := Friend{Name: "Jimmy Neutron", LastContacted: "31/12/2023"}
+
+	updatedFriend := updateLastContacted(friend, todaysDate)
+
+	assert.Equal(t, updatedFriend, expectedResult)
+}
+
+// Tests the function that saves the FriendsList to the yaml
+func TestSaveFriendsListToYAML(t *testing.T) {
+	friends := FriendsList{
+		{Name: "John Wick", LastContacted: "06/06/2023"},
+		{Name: "Peter Parker", LastContacted: "12/12/2023"},
+	}
+
+	testFilePath := "temp_friends.yaml"
+
+	// Call the function to save the list to a file
+	err := SaveFriendsListToYAML(friends, testFilePath)
+	if err != nil {
+		t.Fatalf("Failed to save friends list to YAML: %v", err)
+	}
+
+	// Clean up: defer the deletion of the test file
+	defer os.Remove(testFilePath)
+
+	// Read the file
+	data, err := os.ReadFile(testFilePath)
+	if err != nil {
+		t.Fatalf("Failed to read test file: %v", err)
+	}
+
+	// Check if the file contains the expected content
+	expectedContent := `- name: John Wick
+  lastContacted: 06/06/2023
+- name: Peter Parker
+  lastContacted: 12/12/2023
+`
+	assert.Equal(t, expectedContent, string(data))
 }
 
 // containsFriend checks if the given friend is in the friends list.
