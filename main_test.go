@@ -3,6 +3,7 @@ package main
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,6 @@ var friendsList = FriendsList{
 }
 
 func TestReadFile(t *testing.T) {
-
 	readFileResult, err := buildFriendsList("test/friends_test.yaml")
 	if err != nil {
 		t.Fatalf("Failed to read or parse YAML: %v", err)
@@ -24,7 +24,6 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestPickRandom(t *testing.T) {
-
 	// Call pickRandomFriend a few times to ensure it doesn't return an out-of-bounds error or panic
 	for i := 0; i < 10; i++ {
 		friend, err := pickRandomFriend(friendsList)
@@ -44,6 +43,19 @@ func TestPickRandom(t *testing.T) {
 	if err == nil {
 		t.Errorf("RandomFriend should return an error when the slice is empty")
 	}
+}
+
+func TestCalculateWeight(t *testing.T) {
+	expectedWeight := 200
+
+	todaysDate := time.Date(2023, time.December, 23, 0, 0, 0, 0, time.UTC)
+
+	weight, err := calculateWeight(friendsList[0].LastContacted, todaysDate)
+	if err != nil {
+		t.Errorf("Failed to calculate the weight of %s", friendsList[0].Name)
+	}
+
+	assert.Equal(t, expectedWeight, weight)
 }
 
 // containsFriend checks if the given friend is in the friends list.
