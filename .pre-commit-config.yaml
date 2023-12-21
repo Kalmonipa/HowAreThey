@@ -19,3 +19,11 @@ repos:
       - --enable=vet
       - --enable=golint
       - --enable=staticcheck
+-   repo: local
+    hooks:
+    -   id: go-unit-tests
+        name: go unit tests
+        entry: go test -p=1 ./...
+        pass_filenames: false
+        types: [go]
+        language: system
