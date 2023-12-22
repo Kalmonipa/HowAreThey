@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"time"
@@ -28,7 +27,8 @@ func buildFriendsList(filePath string) (FriendsList, error) {
 	var friends FriendsList
 	err = yaml.Unmarshal(data, &friends)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		LogMessage(LogLevelFatal, "error: %v", err)
+		os.Exit(1)
 	}
 
 	return friends, nil
@@ -46,8 +46,13 @@ func calculateWeight(lastContacted string, currDate time.Time) (int, error) {
 	}
 
 	// Normalize both dates to the start of the day
-	lastContactedNormalised := time.Date(lastContactedDate.Year(), lastContactedDate.Month(), lastContactedDate.Day(), 0, 0, 0, 0, lastContactedDate.Location())
+	lastContactedNormalised := time.Date(lastContactedDate.Year(), lastContactedDate.Month(), lastContactedDate.Day(), 0, 0, 0, 0, time.Local)
 	currDateNormalised := time.Date(currDate.Year(), currDate.Month(), currDate.Day(), 0, 0, 0, 0, currDate.Location())
+
+	// Check if lastContacted date is in the future
+	if lastContactedNormalised.After(currDateNormalised) {
+		return 0, fmt.Errorf("lastContacted date %s is in the future. It must be in the past", lastContacted)
+	}
 
 	// Calculate the difference in days
 	difference := currDateNormalised.Sub(lastContactedNormalised)
@@ -61,9 +66,14 @@ func pickRandomFriend(friends FriendsList) (Friend, error) {
 	weights := make([]int, len(friends))
 
 	for i, friend := range friends {
+
 		weight, err := calculateWeight(friend.LastContacted, time.Now())
 		if err != nil {
 			return Friend{}, err
+		}
+
+		if weight <= 0 {
+			continue
 		}
 		weights[i] = weight
 		totalWeight += weight
@@ -102,14 +112,22 @@ func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 
 func main() {
 
+	// Sets up the logger
+	SetupLogger()
+
 	var filePath = "config/friends.yaml"
 
 	friendsList, err := buildFriendsList(filePath)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		LogMessage(LogLevelFatal, "error: %v", err)
+		os.Exit(1)
 	}
 
 	chosenFriend, err := pickRandomFriend(friendsList)
+	if err != nil {
+		LogMessage(LogLevelFatal, "error: %v", err)
+		os.Exit(1)
+	}
 
 	updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
 
@@ -121,8 +139,9 @@ func main() {
 
 	err = SaveFriendsListToYAML(friendsList, filePath)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		LogMessage(LogLevelFatal, "error: %v", err)
+		os.Exit(1)
 	}
 
-	fmt.Printf("You should talk to %s who you last spoke to on %s", chosenFriend.Name, chosenFriend.LastContacted)
+	LogMessage(LogLevelInfo, "Suggested conversation is with %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
 }

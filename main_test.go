@@ -12,7 +12,10 @@ import (
 var friendsList = FriendsList{
 	Friend{Name: "John Wick", LastContacted: "06/06/2023"},
 	Friend{Name: "Peter Parker", LastContacted: "12/12/2023"},
-	Friend{Name: "The Grinch", LastContacted: "25/12/2022"},
+}
+
+var futureFriendsList = FriendsList{
+	Friend{Name: "Doctor Who", LastContacted: "25/12/2070"},
 }
 
 func TestReadFile(t *testing.T) {
@@ -57,6 +60,15 @@ func TestCalculateWeight(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedWeight, weight)
+}
+
+func TestCalculateWeightFromFuture(t *testing.T) {
+	todaysDate := time.Date(2070, time.December, 23, 0, 0, 0, 0, time.UTC)
+
+	weight, err := calculateWeight(futureFriendsList[0].LastContacted, todaysDate)
+
+	assert.Equal(t, weight, 0)
+	assert.NotNil(t, err)
 }
 
 func TestUpdateLastContact(t *testing.T) {
