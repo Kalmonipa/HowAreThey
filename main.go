@@ -100,6 +100,15 @@ func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
 	return friend
 }
 
+// Lists all the friends names in the friendsList
+func ListFriends(friends FriendsList) []string {
+	var friendsNames []string
+	for _, friend := range friends {
+		friendsNames = append(friendsNames, friend.Name)
+	}
+	return friendsNames
+}
+
 // SaveFriendsListToYAML serializes the FriendsList and saves it to a YAML file.
 func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 	data, err := yaml.Marshal(friends)
@@ -123,25 +132,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	chosenFriend, err := pickRandomFriend(friendsList)
-	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
-		os.Exit(1)
+	fl := ListFriends(friendsList)
+	for _, f := range fl {
+		LogMessage(LogLevelInfo, f)
 	}
 
-	updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
+	// chosenFriend, err := pickRandomFriend(friendsList)
+	// if err != nil {
+	// 	LogMessage(LogLevelFatal, "error: %v", err)
+	// 	os.Exit(1)
+	// }
 
-	for ind, friend := range friendsList {
-		if friend.Name == updatedChosenFriend.Name {
-			friendsList[ind] = updatedChosenFriend
-		}
-	}
+	// updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
 
-	err = SaveFriendsListToYAML(friendsList, filePath)
-	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
-		os.Exit(1)
-	}
+	// for ind, friend := range friendsList {
+	// 	if friend.Name == updatedChosenFriend.Name {
+	// 		friendsList[ind] = updatedChosenFriend
+	// 	}
+	// }
 
-	LogMessage(LogLevelInfo, "You should talk to %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
+	// err = SaveFriendsListToYAML(friendsList, filePath)
+	// if err != nil {
+	// 	LogMessage(LogLevelFatal, "error: %v", err)
+	// 	os.Exit(1)
+	// }
+
+	// LogMessage(LogLevelInfo, "You should talk to %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
 }
