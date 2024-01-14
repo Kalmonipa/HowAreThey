@@ -143,5 +143,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	LogMessage(LogLevelInfo, "Suggested conversation is with %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
+	LogMessage(LogLevelInfo, "You should talk to %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
 }

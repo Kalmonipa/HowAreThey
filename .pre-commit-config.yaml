@@ -28,3 +28,7 @@ repos:
         types: [go]
         language: system
         always_run: true
+- repo: https://github.com/petalmd/dockerfile-pre-commit
+  rev: 'v1.0'
+  hooks:
+  - id: dockerlint
