@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,13 +24,34 @@ var futureFriendsList = FriendsList{
 
 var friendsHandler = &FriendsHandler{FriendsList: friendsList}
 
-func TestReadFile(t *testing.T) {
-	readFileResult, err := buildFriendsList("test/friends_test.yaml")
+// TODO: Rewrite this test to do unit test
+// func TestReadFile(t *testing.T) {
+// 	readFileResult, err := buildFriendsList("test/friends_test.yaml")
+// 	if err != nil {
+// 		t.Fatalf("Failed to read or parse YAML: %v", err)
+// 	}
+
+// 	assert.Equal(t, friendsList, readFileResult)
+// }
+
+// setupTestDB creates and returns a new database for testing
+func setupTestDB() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", ":memory:") // Use in-memory database for tests
 	if err != nil {
-		t.Fatalf("Failed to read or parse YAML: %v", err)
+		return nil, err
 	}
 
-	assert.Equal(t, friendsList, readFileResult)
+	// Create the friends table
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS friends (
+		id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		lastContacted TEXT NOT NULL
+	);`)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func TestPickRandom(t *testing.T) {
@@ -151,15 +173,33 @@ func TestFriendsCountRoute(t *testing.T) {
 }
 
 func TestFriendsListRoute(t *testing.T) {
+
 	gin.SetMode(gin.TestMode)
 
+	// Setup test database
+	db, err := setupTestDB()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	// Insert mock data
+	// Insert some mock data
+	_, err = db.Exec(`INSERT INTO friends (id, name, lastContacted) VALUES
+	(1, 'John Wick', '06/06/2023'),
+	(2, 'Jack Reacher', '06/06/2023');`)
+	assert.NoError(t, err)
+
+	// Setup router with test DB
+	friendsList, err := buildFriendsList(db)
+	assert.NoError(t, err)
+	friendsHandler := NewFriendsHandler(friendsList, db)
 	router := setupRouter(friendsHandler)
 
+	// Perform the test
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/list", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023"}]`
+	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023"}]`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
