@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,17 +9,24 @@ import (
 
 type FriendsHandler struct {
 	FriendsList FriendsList
+	DB          *sql.DB
 }
 
-func NewFriendsHandler(friendsList FriendsList) *FriendsHandler {
+func NewFriendsHandler(friendsList FriendsList, db *sql.DB) *FriendsHandler {
 	return &FriendsHandler{
 		FriendsList: friendsList,
+		DB:          db,
 	}
 }
 
 // GET /friends/list
 func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, h.FriendsList)
+	friendsList, err := buildFriendsList(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, friendsList)
 }
 
 // GET /friends/random
@@ -57,4 +65,21 @@ func (h *FriendsHandler) GetFriendByNameHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, friend)
+}
+
+// POST /friends
+func (h *FriendsHandler) PostNewFriendHandler(c *gin.Context) {
+	var newFriend Friend
+	if err := c.ShouldBindJSON(&newFriend); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := addFriend(h.DB, newFriend)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "New friend added successfully"})
 }
