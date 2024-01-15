@@ -13,12 +13,12 @@ import (
 )
 
 var friendsList = FriendsList{
-	Friend{Name: "John Wick", LastContacted: "06/06/2023"},
-	Friend{Name: "Peter Parker", LastContacted: "12/12/2023"},
+	Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
+	Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
 }
 
 var futureFriendsList = FriendsList{
-	Friend{Name: "Doctor Who", LastContacted: "25/12/2070"},
+	Friend{ID: "3", Name: "Doctor Who", LastContacted: "25/12/2070"},
 }
 
 var friendsHandler = &FriendsHandler{FriendsList: friendsList}
@@ -77,10 +77,10 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 }
 
 func TestUpdateLastContact(t *testing.T) {
-	friend := Friend{Name: "Jimmy Neutron", LastContacted: "10/10/2023"}
+	friend := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "10/10/2023"}
 	todaysDate := time.Date(2023, time.December, 31, 0, 0, 0, 0, time.Local)
 
-	expectedResult := Friend{Name: "Jimmy Neutron", LastContacted: "31/12/2023"}
+	expectedResult := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "31/12/2023"}
 
 	updatedFriend := updateLastContacted(friend, todaysDate)
 
@@ -90,8 +90,8 @@ func TestUpdateLastContact(t *testing.T) {
 // Tests the function that saves the FriendsList to the yaml
 func TestSaveFriendsListToYAML(t *testing.T) {
 	friends := FriendsList{
-		{Name: "John Wick", LastContacted: "06/06/2023"},
-		{Name: "Peter Parker", LastContacted: "12/12/2023"},
+		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
+		{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
 	}
 
 	testFilePath := "temp_friends.yaml"
@@ -112,9 +112,11 @@ func TestSaveFriendsListToYAML(t *testing.T) {
 	}
 
 	// Check if the file contains the expected content
-	expectedContent := `- name: John Wick
+	expectedContent := `- id: "1"
+  name: John Wick
   lastContacted: 06/06/2023
-- name: Peter Parker
+- id: "2"
+  name: Peter Parker
   lastContacted: 12/12/2023
 `
 	assert.Equal(t, expectedContent, string(data))
@@ -123,8 +125,8 @@ func TestSaveFriendsListToYAML(t *testing.T) {
 // // Tests the function that grabs the names of the friends list supplied
 func TestListFriendsNames(t *testing.T) {
 	friends := FriendsList{
-		{Name: "John Wick", LastContacted: "06/06/2023"},
-		{Name: "Peter Parker", LastContacted: "12/12/2023"},
+		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
+		{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
 	}
 
 	expectedResult := []string{"John Wick", "Peter Parker"}
@@ -157,7 +159,7 @@ func TestFriendsListRoute(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/friends/list", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `[{"Name":"John Wick","LastContacted":"06/06/2023"},{"Name":"Peter Parker","LastContacted":"12/12/2023"}]`
+	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023"}]`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())

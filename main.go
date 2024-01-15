@@ -12,6 +12,7 @@ import (
 )
 
 type Friend struct {
+	ID            string `yaml:"id"`
 	Name          string `yaml:"name"`
 	LastContacted string `yaml:"lastContacted"`
 }
