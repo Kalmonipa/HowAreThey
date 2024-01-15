@@ -115,6 +115,20 @@ func TestSaveFriendsListToYAML(t *testing.T) {
 	assert.Equal(t, expectedContent, string(data))
 }
 
+// // Tests the function that grabs the names of the friends list supplied
+func TestListFriendsNames(t *testing.T) {
+	friends := FriendsList{
+		{Name: "John Wick", LastContacted: "06/06/2023"},
+		{Name: "Peter Parker", LastContacted: "12/12/2023"},
+	}
+
+	expectedResult := []string{"John Wick", "Peter Parker"}
+	unexpectedResult := []string{"John Wick", "Peter Parker", "Shouldn't Exist"}
+
+	assert.Equal(t, expectedResult, ListFriendsNames(friends))
+	assert.NotEqual(t, unexpectedResult, ListFriendsNames(friends))
+}
+
 // containsFriend checks if the given friend is in the friends list.
 func containsFriend(friends FriendsList, friend Friend) bool {
 	for _, f := range friends {

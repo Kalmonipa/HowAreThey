@@ -17,7 +17,7 @@ repos:
       - --enable=goimports
       - --enable=gofmt
       - --enable=vet
-      - --enable=golint
+      - --enable=revive
       - --enable=staticcheck
 -   repo: local
     hooks:

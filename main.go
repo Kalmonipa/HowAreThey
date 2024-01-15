@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
 )
 
@@ -101,7 +102,7 @@ func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
 }
 
 // Lists all the friends names in the friendsList
-func ListFriends(friends FriendsList) []string {
+func ListFriendsNames(friends FriendsList) []string {
 	var friendsNames []string
 	for _, friend := range friends {
 		friendsNames = append(friendsNames, friend.Name)
@@ -121,10 +122,13 @@ func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 
 func main() {
 
+	var filePath = "config/friends.yaml"
+
 	// Sets up the logger
 	SetupLogger()
 
-	var filePath = "config/friends.yaml"
+	// TODO: Figure out if .Default() is what I need or something else
+	router := gin.Default()
 
 	friendsList, err := buildFriendsList(filePath)
 	if err != nil {
@@ -132,9 +136,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	fl := ListFriends(friendsList)
-	for _, f := range fl {
-		LogMessage(LogLevelInfo, f)
+	// Create an instance of your handler struct with the friendsList
+	friendsHandler := NewFriendsHandler(friendsList)
+
+	router.GET("/friends/list", friendsHandler.ListFriendsNames)
+
+	err = router.Run()
+	if err != nil {
+		LogMessage(LogLevelFatal, "error: %v", err)
+		os.Exit(1)
 	}
 
 	// chosenFriend, err := pickRandomFriend(friendsList)
