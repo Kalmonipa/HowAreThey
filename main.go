@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 )
 
 type Friend struct {
+	ID            string `yaml:"id"`
 	Name          string `yaml:"name"`
 	LastContacted string `yaml:"lastContacted"`
 }
@@ -106,8 +108,28 @@ func getFriendCount(friends FriendsList) int {
 	return len(friends)
 }
 
+func getFriendByID(id string, friends FriendsList) (*Friend, error) {
+	for _, friend := range friends {
+		if friend.ID == id {
+			return &friend, nil
+		}
+	}
+	return nil, errors.New("friend not found")
+}
+
+func getFriendByName(name string, friends FriendsList) (*Friend, error) {
+	for _, friend := range friends {
+		lowercased := strings.ToLower(friend.Name)
+		hyphenated := strings.ReplaceAll(lowercased, " ", "-")
+		if hyphenated == name {
+			return &friend, nil
+		}
+	}
+	return nil, errors.New("friend not found")
+}
+
 // Lists all the friends names in the friendsList
-func ListFriendsNames(friends FriendsList) []string {
+func listFriendsNames(friends FriendsList) []string {
 	var friendsNames []string
 	for _, friend := range friends {
 		friendsNames = append(friendsNames, friend.Name)
@@ -116,7 +138,7 @@ func ListFriendsNames(friends FriendsList) []string {
 }
 
 // SaveFriendsListToYAML serializes the FriendsList and saves it to a YAML file.
-func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
+func saveFriendsListToYAML(friends FriendsList, filePath string) error {
 	data, err := yaml.Marshal(friends)
 	if err != nil {
 		return err
@@ -133,6 +155,8 @@ func setupRouter(handler *FriendsHandler) *gin.Engine {
 	r.GET("/friends/list", handler.GetFriendsHandler)
 	r.GET("/friends/random", handler.GetRandomFriendHandler)
 	r.GET("/friends/count", handler.GetFriendCountHandler)
+	r.GET("/friends/id/:id", handler.GetFriendByIDHandler)
+	r.GET("/friends/name/:name", handler.GetFriendByNameHandler)
 
 	return r
 }

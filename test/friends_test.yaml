@@ -1,5 +1,7 @@
 # #1 John Wick is used in TestCalculateWeight
-- name: John Wick
+- id: 1
+  name: John Wick
   lastContacted: 06/06/2023
-- name: Peter Parker
+- id: 2
+  name: Peter Parker
   lastContacted: 12/12/2023
