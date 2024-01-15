@@ -1,11 +1,14 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +20,8 @@ var friendsList = FriendsList{
 var futureFriendsList = FriendsList{
 	Friend{Name: "Doctor Who", LastContacted: "25/12/2070"},
 }
+
+var friendsHandler = &FriendsHandler{FriendsList: friendsList}
 
 func TestReadFile(t *testing.T) {
 	readFileResult, err := buildFriendsList("test/friends_test.yaml")
@@ -127,6 +132,35 @@ func TestListFriendsNames(t *testing.T) {
 
 	assert.Equal(t, expectedResult, ListFriendsNames(friends))
 	assert.NotEqual(t, unexpectedResult, ListFriendsNames(friends))
+}
+
+// Testing the routes
+func TestFriendsCountRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := setupRouter(friendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/count", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "2", w.Body.String())
+}
+
+func TestFriendsListRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := setupRouter(friendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/list", nil)
+	router.ServeHTTP(w, req)
+
+	expectedResult := `[{"Name":"John Wick","LastContacted":"06/06/2023"},{"Name":"Peter Parker","LastContacted":"12/12/2023"}]`
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, expectedResult, w.Body.String())
 }
 
 // containsFriend checks if the given friend is in the friends list.

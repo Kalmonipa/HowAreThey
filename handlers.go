@@ -17,13 +17,13 @@ func NewFriendsHandler(friendsList FriendsList) *FriendsHandler {
 }
 
 // GET /friends/list
-func (h *FriendsHandler) GetFriends(c *gin.Context) {
+func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
 	//friendsNames := ListFriendsNames(h.FriendsList)
 	c.JSON(http.StatusOK, h.FriendsList)
 }
 
 // GET /friends/random
-func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
+func (h *FriendsHandler) GetRandomFriendHandler(c *gin.Context) {
 	randomFriend, err := pickRandomFriend(h.FriendsList)
 	if err != nil {
 		LogMessage(LogLevelFatal, "error: %v", err)
@@ -31,4 +31,9 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, randomFriend)
+}
+
+// GET /friends/count
+func (h *FriendsHandler) GetFriendCountHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, getFriendCount(h.FriendsList))
 }
