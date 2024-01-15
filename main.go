@@ -18,6 +18,7 @@ type Friend struct {
 
 type FriendsList []Friend
 
+// Builds the list from the yaml file specified
 func buildFriendsList(filePath string) (FriendsList, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -101,6 +102,10 @@ func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
 	return friend
 }
 
+func getFriendCount(friends FriendsList) int {
+	return len(friends)
+}
+
 // Lists all the friends names in the friendsList
 func ListFriendsNames(friends FriendsList) []string {
 	var friendsNames []string
@@ -120,15 +125,24 @@ func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 	return os.WriteFile(filePath, data, 0644)
 }
 
+func setupRouter(handler *FriendsHandler) *gin.Engine {
+
+	// TODO: Figure out if .Default() is what I need or something else
+	r := gin.Default()
+
+	r.GET("/friends/list", handler.GetFriendsHandler)
+	r.GET("/friends/random", handler.GetRandomFriendHandler)
+	r.GET("/friends/count", handler.GetFriendCountHandler)
+
+	return r
+}
+
 func main() {
 
 	var filePath = "config/friends.yaml"
 
 	// Sets up the logger
 	SetupLogger()
-
-	// TODO: Figure out if .Default() is what I need or something else
-	router := gin.Default()
 
 	friendsList, err := buildFriendsList(filePath)
 	if err != nil {
@@ -139,8 +153,7 @@ func main() {
 	// Create an instance of your handler struct with the friendsList
 	friendsHandler := NewFriendsHandler(friendsList)
 
-	router.GET("/friends/list", friendsHandler.GetFriends)
-	router.GET("/friends/random", friendsHandler.GetRandomFriend)
+	router := setupRouter(friendsHandler)
 
 	err = router.Run()
 	if err != nil {
