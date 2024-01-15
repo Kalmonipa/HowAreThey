@@ -48,7 +48,7 @@ func (h *FriendsHandler) GetFriendByIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, friend)
 }
 
-// GET /friends/id/{ID}
+// GET /friends/name/{NAME}
 func (h *FriendsHandler) GetFriendByNameHandler(c *gin.Context) {
 	friendName := c.Param("name")
 	friend, err := getFriendByName(friendName, h.FriendsList)
