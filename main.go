@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
 )
 
@@ -100,6 +101,15 @@ func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
 	return friend
 }
 
+// Lists all the friends names in the friendsList
+func ListFriendsNames(friends FriendsList) []string {
+	var friendsNames []string
+	for _, friend := range friends {
+		friendsNames = append(friendsNames, friend.Name)
+	}
+	return friendsNames
+}
+
 // SaveFriendsListToYAML serializes the FriendsList and saves it to a YAML file.
 func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 	data, err := yaml.Marshal(friends)
@@ -112,10 +122,13 @@ func SaveFriendsListToYAML(friends FriendsList, filePath string) error {
 
 func main() {
 
+	var filePath = "config/friends.yaml"
+
 	// Sets up the logger
 	SetupLogger()
 
-	var filePath = "config/friends.yaml"
+	// TODO: Figure out if .Default() is what I need or something else
+	router := gin.Default()
 
 	friendsList, err := buildFriendsList(filePath)
 	if err != nil {
@@ -123,25 +136,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	chosenFriend, err := pickRandomFriend(friendsList)
+	// Create an instance of your handler struct with the friendsList
+	friendsHandler := NewFriendsHandler(friendsList)
+
+	router.GET("/friends/list", friendsHandler.ListFriendsNames)
+
+	err = router.Run()
 	if err != nil {
 		LogMessage(LogLevelFatal, "error: %v", err)
 		os.Exit(1)
 	}
 
-	updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
+	// chosenFriend, err := pickRandomFriend(friendsList)
+	// if err != nil {
+	// 	LogMessage(LogLevelFatal, "error: %v", err)
+	// 	os.Exit(1)
+	// }
 
-	for ind, friend := range friendsList {
-		if friend.Name == updatedChosenFriend.Name {
-			friendsList[ind] = updatedChosenFriend
-		}
-	}
+	// updatedChosenFriend := updateLastContacted(chosenFriend, time.Now())
 
-	err = SaveFriendsListToYAML(friendsList, filePath)
-	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
-		os.Exit(1)
-	}
+	// for ind, friend := range friendsList {
+	// 	if friend.Name == updatedChosenFriend.Name {
+	// 		friendsList[ind] = updatedChosenFriend
+	// 	}
+	// }
 
-	LogMessage(LogLevelInfo, "You should talk to %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
+	// err = SaveFriendsListToYAML(friendsList, filePath)
+	// if err != nil {
+	// 	LogMessage(LogLevelFatal, "error: %v", err)
+	// 	os.Exit(1)
+	// }
+
+	// LogMessage(LogLevelInfo, "You should talk to %s. You last contacted them on %s", chosenFriend.Name, chosenFriend.LastContacted)
 }
