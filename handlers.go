@@ -18,7 +18,6 @@ func NewFriendsHandler(friendsList FriendsList) *FriendsHandler {
 
 // GET /friends/list
 func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
-	//friendsNames := listFriendsNames(h.FriendsList)
 	c.JSON(http.StatusOK, h.FriendsList)
 }
 
