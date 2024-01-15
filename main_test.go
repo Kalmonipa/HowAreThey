@@ -97,7 +97,7 @@ func TestSaveFriendsListToYAML(t *testing.T) {
 	testFilePath := "temp_friends.yaml"
 
 	// Call the function to save the list to a file
-	err := SaveFriendsListToYAML(friends, testFilePath)
+	err := saveFriendsListToYAML(friends, testFilePath)
 	if err != nil {
 		t.Fatalf("Failed to save friends list to YAML: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestSaveFriendsListToYAML(t *testing.T) {
 	assert.Equal(t, expectedContent, string(data))
 }
 
-// // Tests the function that grabs the names of the friends list supplied
+// Tests the function that grabs the names of the friends list supplied
 func TestListFriendsNames(t *testing.T) {
 	friends := FriendsList{
 		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
@@ -132,8 +132,8 @@ func TestListFriendsNames(t *testing.T) {
 	expectedResult := []string{"John Wick", "Peter Parker"}
 	unexpectedResult := []string{"John Wick", "Peter Parker", "Shouldn't Exist"}
 
-	assert.Equal(t, expectedResult, ListFriendsNames(friends))
-	assert.NotEqual(t, unexpectedResult, ListFriendsNames(friends))
+	assert.Equal(t, expectedResult, listFriendsNames(friends))
+	assert.NotEqual(t, unexpectedResult, listFriendsNames(friends))
 }
 
 // Testing the routes
@@ -162,6 +162,51 @@ func TestFriendsListRoute(t *testing.T) {
 	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023"}]`
 
 	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, expectedResult, w.Body.String())
+}
+
+func TestFriendIDRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := setupRouter(friendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
+	router.ServeHTTP(w, req)
+
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, expectedResult, w.Body.String())
+}
+
+func TestFriendNameRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := setupRouter(friendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
+	router.ServeHTTP(w, req)
+
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, expectedResult, w.Body.String())
+}
+
+func TestMissingFriendIDRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := setupRouter(friendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/id/100", nil)
+	router.ServeHTTP(w, req)
+
+	expectedResult := `{"error":"friend not found"}`
+
+	assert.Equal(t, 404, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
 }
 
