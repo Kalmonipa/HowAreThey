@@ -139,7 +139,8 @@ func main() {
 	// Create an instance of your handler struct with the friendsList
 	friendsHandler := NewFriendsHandler(friendsList)
 
-	router.GET("/friends/list", friendsHandler.ListFriendsNames)
+	router.GET("/friends/list", friendsHandler.GetFriends)
+	router.GET("/friends/random", friendsHandler.GetRandomFriend)
 
 	err = router.Run()
 	if err != nil {
