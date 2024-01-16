@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -109,41 +108,6 @@ func TestUpdateLastContact(t *testing.T) {
 	assert.Equal(t, updatedFriend, expectedResult)
 }
 
-// Tests the function that saves the FriendsList to the yaml
-func TestSaveFriendsListToYAML(t *testing.T) {
-	friends := FriendsList{
-		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
-		{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
-	}
-
-	testFilePath := "temp_friends.yaml"
-
-	// Call the function to save the list to a file
-	err := saveFriendsListToYAML(friends, testFilePath)
-	if err != nil {
-		t.Fatalf("Failed to save friends list to YAML: %v", err)
-	}
-
-	// Clean up: defer the deletion of the test file
-	defer os.Remove(testFilePath)
-
-	// Read the file
-	data, err := os.ReadFile(testFilePath)
-	if err != nil {
-		t.Fatalf("Failed to read test file: %v", err)
-	}
-
-	// Check if the file contains the expected content
-	expectedContent := `- id: "1"
-  name: John Wick
-  lastContacted: 06/06/2023
-- id: "2"
-  name: Peter Parker
-  lastContacted: 12/12/2023
-`
-	assert.Equal(t, expectedContent, string(data))
-}
-
 // Tests the function that grabs the names of the friends list supplied
 func TestListFriendsNames(t *testing.T) {
 	friends := FriendsList{
@@ -182,7 +146,6 @@ func TestFriendsListRoute(t *testing.T) {
 	defer db.Close()
 
 	// Insert mock data
-	// Insert some mock data
 	_, err = db.Exec(`INSERT INTO friends (id, name, lastContacted) VALUES
 	(1, 'John Wick', '06/06/2023'),
 	(2, 'Jack Reacher', '06/06/2023');`)
@@ -196,7 +159,7 @@ func TestFriendsListRoute(t *testing.T) {
 
 	// Perform the test
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/list", nil)
+	req, _ := http.NewRequest("GET", "/friends", nil)
 	router.ServeHTTP(w, req)
 
 	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023"}]`
@@ -248,6 +211,28 @@ func TestMissingFriendIDRoute(t *testing.T) {
 
 	assert.Equal(t, 404, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
+}
+
+func TestAddFriend(t *testing.T) {
+	db, err := setupTestDB()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	newFriend := Friend{
+		ID:            "3",
+		Name:          "Zark Muckerberg",
+		LastContacted: "15/01/2024",
+	}
+
+	// Test the addFriend function
+	err = addFriend(db, newFriend)
+	assert.NoError(t, err)
+
+	// Verify that the friend was added
+	var friendCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", newFriend.ID).Scan(&friendCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, friendCount, "Expected new friend to be added")
 }
 
 // containsFriend checks if the given friend is in the friends list.

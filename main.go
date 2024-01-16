@@ -12,7 +12,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/yaml.v3"
 )
 
 type Friend struct {
@@ -206,16 +205,6 @@ func listFriendsNames(friends FriendsList) []string {
 	return friendsNames
 }
 
-// SaveFriendsListToYAML serializes the FriendsList and saves it to a YAML file.
-func saveFriendsListToYAML(friends FriendsList, filePath string) error {
-	data, err := yaml.Marshal(friends)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filePath, data, 0644)
-}
-
 func setupRouter(handler *FriendsHandler) *gin.Engine {
 
 	gin.SetMode(gin.ReleaseMode)
@@ -223,7 +212,7 @@ func setupRouter(handler *FriendsHandler) *gin.Engine {
 	// TODO: Figure out if .Default() is what I need or something else
 	r := gin.Default()
 
-	r.GET("/friends/list", handler.GetFriendsHandler)
+	r.GET("/friends", handler.GetFriendsHandler)
 	r.GET("/friends/random", handler.GetRandomFriendHandler)
 	r.GET("/friends/count", handler.GetFriendCountHandler)
 	r.GET("/friends/id/:id", handler.GetFriendByIDHandler)

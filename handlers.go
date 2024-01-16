@@ -19,14 +19,14 @@ func NewFriendsHandler(friendsList FriendsList, db *sql.DB) *FriendsHandler {
 	}
 }
 
-// GET /friends/list
+// GET /friends
 func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
-	friendsList, err := buildFriendsList(h.DB)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, friendsList)
+	// friendsList, err := buildFriendsList(h.DB)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	return
+	// }
+	c.JSON(http.StatusOK, h.FriendsList)
 }
 
 // GET /friends/random
@@ -80,6 +80,13 @@ func (h *FriendsHandler) PostNewFriendHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	friendsList, err := buildFriendsList(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	h.FriendsList = friendsList
 
 	c.JSON(http.StatusCreated, gin.H{"message": "New friend added successfully"})
 }
