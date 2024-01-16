@@ -19,13 +19,28 @@ func NewFriendsHandler(friendsList FriendsList, db *sql.DB) *FriendsHandler {
 	}
 }
 
+// DELETE /friends/{ID}
+func (h *FriendsHandler) DeleteFriendHandler(c *gin.Context) {
+	friendID := c.Param("id")
+
+	err := deleteFriend(h.DB, friendID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	friendsList, err := buildFriendsList(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	h.FriendsList = friendsList
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Friend removed successfully"})
+}
+
 // GET /friends
 func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
-	// friendsList, err := buildFriendsList(h.DB)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
 	c.JSON(http.StatusOK, h.FriendsList)
 }
 
@@ -88,5 +103,7 @@ func (h *FriendsHandler) PostNewFriendHandler(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	c.JSON(http.StatusCreated, gin.H{"message": "New friend added successfully"})
+	successMsg := newFriend.Name + " added successfully"
+
+	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
 }

@@ -196,6 +196,23 @@ func addFriend(db *sql.DB, newFriend Friend) error {
 	return nil
 }
 
+// Delete a friend from the db based on the ID provided
+func deleteFriend(db *sql.DB, id string) error {
+	stmt, err := db.Prepare("DELETE FROM friends WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	LogMessage(LogLevelInfo, "Friend deleted successfully")
+	return nil
+}
+
 // Lists all the friends names in the friendsList
 func listFriendsNames(friends FriendsList) []string {
 	var friendsNames []string
@@ -212,6 +229,7 @@ func setupRouter(handler *FriendsHandler) *gin.Engine {
 	// TODO: Figure out if .Default() is what I need or something else
 	r := gin.Default()
 
+	r.DELETE("/friends/:id", handler.DeleteFriendHandler)
 	r.GET("/friends", handler.GetFriendsHandler)
 	r.GET("/friends/random", handler.GetRandomFriendHandler)
 	r.GET("/friends/count", handler.GetFriendCountHandler)
