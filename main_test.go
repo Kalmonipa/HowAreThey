@@ -23,16 +23,6 @@ var futureFriendsList = FriendsList{
 
 var friendsHandler = &FriendsHandler{FriendsList: friendsList}
 
-// TODO: Rewrite this test to do unit test
-// func TestReadFile(t *testing.T) {
-// 	readFileResult, err := buildFriendsList("test/friends_test.yaml")
-// 	if err != nil {
-// 		t.Fatalf("Failed to read or parse YAML: %v", err)
-// 	}
-
-// 	assert.Equal(t, friendsList, readFileResult)
-// }
-
 // setupTestDB creates and returns a new database for testing
 func setupTestDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", ":memory:") // Use in-memory database for tests
@@ -233,6 +223,28 @@ func TestAddFriend(t *testing.T) {
 	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", newFriend.ID).Scan(&friendCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, friendCount, "Expected new friend to be added")
+}
+
+// Tests that the deleteFriend function removes a friend based on the ID provided
+func TestDeleteFriend(t *testing.T) {
+
+	gin.SetMode(gin.TestMode)
+	db, err := setupTestDB()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	_, err = db.Exec(`INSERT INTO friends (id, name, lastContacted) VALUES
+	(1, 'John Wick', '06/06/2023'),
+	(2, 'Jack Reacher', '06/06/2023');`)
+	assert.NoError(t, err)
+
+	err = deleteFriend(db, "2")
+	assert.NoError(t, err)
+
+	var friendCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM friends").Scan(&friendCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, friendCount, "Expected new friend to be deleted")
 }
 
 // containsFriend checks if the given friend is in the friends list.
