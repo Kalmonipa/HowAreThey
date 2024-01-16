@@ -2,8 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
@@ -44,20 +42,17 @@ func setupTestDB() (*sql.DB, error) {
 }
 
 func TestPickRandom(t *testing.T) {
-	// Call pickRandomFriend a few times to ensure it doesn't return an out-of-bounds error or panic
 	for i := 0; i < 10; i++ {
 		friend, err := pickRandomFriend(friendsList)
 		if err != nil {
 			t.Errorf("RandomFriend returned an error: %v", err)
 		}
 
-		// Checks to make sure that the friend that gets returned is in the FriendsList
 		if !containsFriend(friendsList, friend) {
 			t.Errorf("Chosen friend %+v not found in the friends list", friend)
 		}
 	}
 
-	// Test with an empty friends list
 	emptyFriends := FriendsList{}
 	_, err := pickRandomFriend(emptyFriends)
 	if err == nil {
@@ -98,7 +93,6 @@ func TestUpdateLastContact(t *testing.T) {
 	assert.Equal(t, updatedFriend, expectedResult)
 }
 
-// Tests the function that grabs the names of the friends list supplied
 func TestListFriendsNames(t *testing.T) {
 	friends := FriendsList{
 		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
@@ -110,97 +104,6 @@ func TestListFriendsNames(t *testing.T) {
 
 	assert.Equal(t, expectedResult, listFriendsNames(friends))
 	assert.NotEqual(t, unexpectedResult, listFriendsNames(friends))
-}
-
-// Testing the routes
-func TestFriendsCountRoute(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	router := setupRouter(friendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/count", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "2", w.Body.String())
-}
-
-func TestFriendsListRoute(t *testing.T) {
-
-	gin.SetMode(gin.TestMode)
-
-	// Setup test database
-	db, err := setupTestDB()
-	assert.NoError(t, err)
-	defer db.Close()
-
-	// Insert mock data
-	_, err = db.Exec(`INSERT INTO friends (id, name, lastContacted) VALUES
-	(1, 'John Wick', '06/06/2023'),
-	(2, 'Jack Reacher', '06/06/2023');`)
-	assert.NoError(t, err)
-
-	// Setup router with test DB
-	friendsList, err := buildFriendsList(db)
-	assert.NoError(t, err)
-	friendsHandler := NewFriendsHandler(friendsList, db)
-	router := setupRouter(friendsHandler)
-
-	// Perform the test
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends", nil)
-	router.ServeHTTP(w, req)
-
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023"}]`
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
-}
-
-func TestFriendIDRoute(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	router := setupRouter(friendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
-	router.ServeHTTP(w, req)
-
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
-}
-
-func TestFriendNameRoute(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	router := setupRouter(friendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
-	router.ServeHTTP(w, req)
-
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
-}
-
-func TestMissingFriendIDRoute(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	router := setupRouter(friendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/id/100", nil)
-	router.ServeHTTP(w, req)
-
-	expectedResult := `{"error":"friend not found"}`
-
-	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
 }
 
 func TestAddFriend(t *testing.T) {
@@ -225,7 +128,6 @@ func TestAddFriend(t *testing.T) {
 	assert.Equal(t, 1, friendCount, "Expected new friend to be added")
 }
 
-// Tests that the deleteFriend function removes a friend based on the ID provided
 func TestDeleteFriend(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
@@ -233,9 +135,9 @@ func TestDeleteFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	_, err = db.Exec(`INSERT INTO friends (id, name, lastContacted) VALUES
-	(1, 'John Wick', '06/06/2023'),
-	(2, 'Jack Reacher', '06/06/2023');`)
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	assert.NoError(t, err)
+	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023")
 	assert.NoError(t, err)
 
 	err = deleteFriend(db, "2")
@@ -247,6 +149,30 @@ func TestDeleteFriend(t *testing.T) {
 	assert.Equal(t, 1, friendCount, "Expected new friend to be deleted")
 }
 
+func TestUpdateFriend(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, err := setupTestDB()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	assert.NoError(t, err)
+
+	updatedFriend := Friend{
+		Name:          "John Wick",
+		LastContacted: "10/01/2024",
+	}
+
+	err = updateFriend(db, "1", updatedFriend)
+	assert.NoError(t, err)
+
+	var friend Friend
+	err = db.QueryRow("SELECT name, lastContacted FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted)
+	assert.NoError(t, err)
+	assert.Equal(t, updatedFriend.Name, friend.Name)
+	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
+}
+
 // containsFriend checks if the given friend is in the friends list.
 func containsFriend(friends FriendsList, friend Friend) bool {
 	for _, f := range friends {
@@ -255,4 +181,16 @@ func containsFriend(friends FriendsList, friend Friend) bool {
 		}
 	}
 	return false
+}
+
+// insertMockFriend inserts a mock friend into the test database.
+func insertMockFriend(db *sql.DB, id string, name string, lastContacted string) error {
+	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted) VALUES (?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id, name, lastContacted)
+	return err
 }

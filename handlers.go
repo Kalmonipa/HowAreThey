@@ -20,7 +20,7 @@ func NewFriendsHandler(friendsList FriendsList, db *sql.DB) *FriendsHandler {
 }
 
 // DELETE /friends/{ID}
-func (h *FriendsHandler) DeleteFriendHandler(c *gin.Context) {
+func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	friendID := c.Param("id")
 
 	err := deleteFriend(h.DB, friendID)
@@ -40,12 +40,12 @@ func (h *FriendsHandler) DeleteFriendHandler(c *gin.Context) {
 }
 
 // GET /friends
-func (h *FriendsHandler) GetFriendsHandler(c *gin.Context) {
+func (h *FriendsHandler) GetFriends(c *gin.Context) {
 	c.JSON(http.StatusOK, h.FriendsList)
 }
 
 // GET /friends/random
-func (h *FriendsHandler) GetRandomFriendHandler(c *gin.Context) {
+func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	randomFriend, err := pickRandomFriend(h.FriendsList)
 	if err != nil {
 		LogMessage(LogLevelFatal, "error: %v", err)
@@ -56,12 +56,12 @@ func (h *FriendsHandler) GetRandomFriendHandler(c *gin.Context) {
 }
 
 // GET /friends/count
-func (h *FriendsHandler) GetFriendCountHandler(c *gin.Context) {
+func (h *FriendsHandler) GetFriendCount(c *gin.Context) {
 	c.JSON(http.StatusOK, getFriendCount(h.FriendsList))
 }
 
 // GET /friends/id/{ID}
-func (h *FriendsHandler) GetFriendByIDHandler(c *gin.Context) {
+func (h *FriendsHandler) GetFriendByID(c *gin.Context) {
 	friendID := c.Param("id")
 	friend, err := getFriendByID(friendID, h.FriendsList)
 	if err != nil {
@@ -72,7 +72,7 @@ func (h *FriendsHandler) GetFriendByIDHandler(c *gin.Context) {
 }
 
 // GET /friends/name/{NAME}
-func (h *FriendsHandler) GetFriendByNameHandler(c *gin.Context) {
+func (h *FriendsHandler) GetFriendByName(c *gin.Context) {
 	friendName := c.Param("name")
 	friend, err := getFriendByName(friendName, h.FriendsList)
 	if err != nil {
@@ -83,7 +83,7 @@ func (h *FriendsHandler) GetFriendByNameHandler(c *gin.Context) {
 }
 
 // POST /friends
-func (h *FriendsHandler) PostNewFriendHandler(c *gin.Context) {
+func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 	var newFriend Friend
 	if err := c.ShouldBindJSON(&newFriend); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -103,7 +103,34 @@ func (h *FriendsHandler) PostNewFriendHandler(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	successMsg := newFriend.Name + " added successfully"
+	successMsg := newFriend.ID + " (" + newFriend.Name + ") added successfully"
 
 	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
+}
+
+// PUT /friends/{ID}
+func (h *FriendsHandler) PutFriend(c *gin.Context) {
+	id := c.Param("id")
+
+	var updatedFriend Friend
+	if err := c.ShouldBindJSON(&updatedFriend); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := updateFriend(h.DB, id, updatedFriend); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	friendsList, err := buildFriendsList(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	h.FriendsList = friendsList
+
+	successMsg := updatedFriend.ID + " updated successfully"
+
+	c.JSON(http.StatusOK, gin.H{"message": successMsg})
 }
