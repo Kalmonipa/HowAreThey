@@ -11,19 +11,19 @@ import (
 )
 
 var friendsList = FriendsList{
-	Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
-	Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
+	Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
+	Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
 }
 
 var futureFriendsList = FriendsList{
-	Friend{ID: "3", Name: "Doctor Who", LastContacted: "25/12/2070"},
+	Friend{ID: "3", Name: "Doctor Who", LastContacted: "25/12/2070", Notes: "Lives in a phonebox"},
 }
 
 var friendsHandler = &FriendsHandler{FriendsList: friendsList}
 
 // setupTestDB creates and returns a new database for testing
 func setupTestDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", ":memory:") // Use in-memory database for tests
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,8 @@ func setupTestDB() (*sql.DB, error) {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS friends (
 		id INTEGER PRIMARY KEY,
 		name TEXT NOT NULL,
-		lastContacted TEXT NOT NULL
+		lastContacted TEXT NOT NULL,
+		notes TEXT NOT NULL
 	);`)
 	if err != nil {
 		return nil, err
@@ -83,10 +84,10 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 }
 
 func TestUpdateLastContact(t *testing.T) {
-	friend := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "10/10/2023"}
+	friend := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "10/10/2023", Notes: "Pretty smart kid"}
 	todaysDate := time.Date(2023, time.December, 31, 0, 0, 0, 0, time.Local)
 
-	expectedResult := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "31/12/2023"}
+	expectedResult := Friend{ID: "1", Name: "Jimmy Neutron", LastContacted: "31/12/2023", Notes: "Pretty smart kid"}
 
 	updatedFriend := updateLastContacted(friend, todaysDate)
 
@@ -94,16 +95,11 @@ func TestUpdateLastContact(t *testing.T) {
 }
 
 func TestListFriendsNames(t *testing.T) {
-	friends := FriendsList{
-		{ID: "1", Name: "John Wick", LastContacted: "06/06/2023"},
-		{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023"},
-	}
-
 	expectedResult := []string{"John Wick", "Peter Parker"}
 	unexpectedResult := []string{"John Wick", "Peter Parker", "Shouldn't Exist"}
 
-	assert.Equal(t, expectedResult, listFriendsNames(friends))
-	assert.NotEqual(t, unexpectedResult, listFriendsNames(friends))
+	assert.Equal(t, expectedResult, listFriendsNames(friendsList))
+	assert.NotEqual(t, unexpectedResult, listFriendsNames(friendsList))
 }
 
 func TestAddFriend(t *testing.T) {
@@ -112,9 +108,9 @@ func TestAddFriend(t *testing.T) {
 	defer db.Close()
 
 	newFriend := Friend{
-		ID:            "3",
 		Name:          "Zark Muckerberg",
 		LastContacted: "15/01/2024",
+		Notes:         "Definitely a lizard person",
 	}
 
 	// Test the addFriend function
@@ -123,7 +119,7 @@ func TestAddFriend(t *testing.T) {
 
 	// Verify that the friend was added
 	var friendCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", newFriend.ID).Scan(&friendCount)
+	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&friendCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, friendCount, "Expected new friend to be added")
 }
@@ -135,9 +131,9 @@ func TestDeleteFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
-	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023")
+	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023", "Must be on steroids")
 	assert.NoError(t, err)
 
 	err = deleteFriend(db, "2")
@@ -155,22 +151,24 @@ func TestUpdateFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
 
 	updatedFriend := Friend{
 		Name:          "John Wick",
 		LastContacted: "10/01/2024",
+		Notes:         "Nice guy",
 	}
 
 	err = updateFriend(db, "1", updatedFriend)
 	assert.NoError(t, err)
 
 	var friend Friend
-	err = db.QueryRow("SELECT name, lastContacted FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted)
+	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
+	assert.Equal(t, updatedFriend.Notes, friend.Notes)
 }
 
 // containsFriend checks if the given friend is in the friends list.
@@ -184,13 +182,13 @@ func containsFriend(friends FriendsList, friend Friend) bool {
 }
 
 // insertMockFriend inserts a mock friend into the test database.
-func insertMockFriend(db *sql.DB, id string, name string, lastContacted string) error {
-	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted) VALUES (?, ?, ?)")
+func insertMockFriend(db *sql.DB, id string, name string, lastContacted string, notes string) error {
+	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted, notes) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, name, lastContacted)
+	_, err = stmt.Exec(id, name, lastContacted, notes)
 	return err
 }

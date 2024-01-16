@@ -15,9 +15,10 @@ import (
 )
 
 type Friend struct {
-	ID            string `yaml:"id"`
-	Name          string `yaml:"name"`
-	LastContacted string `yaml:"lastContacted"`
+	ID            string
+	Name          string
+	LastContacted string
+	Notes         string
 }
 
 type FriendsList []Friend
@@ -48,9 +49,10 @@ func createOrOpenSQLiteDB(sqlFilePath string) (*sql.DB, error) {
 func createTable(db *sql.DB) error {
 	createTableSQL := `
     CREATE TABLE IF NOT EXISTS friends (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        lastContacted TEXT NOT NULL
+        lastContacted TEXT NOT NULL,
+		notes TEXT NOT NULL
     );`
 
 	_, err := db.Exec(createTableSQL)
@@ -64,9 +66,9 @@ func createTable(db *sql.DB) error {
 // Builds the list from the yaml file specified
 func buildFriendsList(db *sql.DB) (FriendsList, error) {
 	// Query the database
-	rows, err := db.Query("SELECT id, name, lastContacted FROM friends")
+	rows, err := db.Query("SELECT id, name, lastContacted, notes FROM friends")
 	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
+		LogMessage(LogLevelFatal, "Failed to select from db: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -74,15 +76,15 @@ func buildFriendsList(db *sql.DB) (FriendsList, error) {
 	var friends FriendsList
 	for rows.Next() {
 		var f Friend
-		if err := rows.Scan(&f.ID, &f.Name, &f.LastContacted); err != nil {
-			LogMessage(LogLevelFatal, "error: %v", err)
+		if err := rows.Scan(&f.ID, &f.Name, &f.LastContacted, &f.Notes); err != nil {
+			LogMessage(LogLevelFatal, "Failed to scan: %v", err)
 			return nil, err
 		}
 		friends = append(friends, f)
 	}
 
 	if err := rows.Err(); err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
+		LogMessage(LogLevelFatal, "Failed to close: %v", err)
 		return nil, err
 	}
 
@@ -185,18 +187,20 @@ func getFriendByName(name string, friends FriendsList) (*Friend, error) {
 
 // addFriend inserts a new friend into the database
 func addFriend(db *sql.DB, newFriend Friend) error {
-	stmt, err := db.Prepare("INSERT INTO friends(id, name, lastContacted) VALUES(?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO friends(name, lastContacted, notes) VALUES(?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(newFriend.ID, newFriend.Name, newFriend.LastContacted)
+	_, err = stmt.Exec(newFriend.Name, newFriend.LastContacted, newFriend.Notes)
 	if err != nil {
 		return err
 	}
 
-	LogMessage(LogLevelInfo, "New friend added successfully")
+	successMsg := newFriend.Name + " added successfully"
+
+	LogMessage(LogLevelInfo, successMsg)
 	return nil
 }
 
@@ -219,13 +223,13 @@ func deleteFriend(db *sql.DB, id string) error {
 
 // Updates a friend with new details
 func updateFriend(db *sql.DB, id string, updatedFriend Friend) error {
-	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? WHERE id = ?")
+	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? , notes = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(updatedFriend.Name, updatedFriend.LastContacted, id)
+	_, err = stmt.Exec(updatedFriend.Name, updatedFriend.LastContacted, updatedFriend.Notes, id)
 	if err != nil {
 		return err
 	}
@@ -284,7 +288,7 @@ func main() {
 
 	friendsList, err := buildFriendsList(db)
 	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
+		LogMessage(LogLevelFatal, "Failed to build slice: %v", err)
 		panic(err)
 	}
 
