@@ -34,9 +34,9 @@ func TestFriendsListRoute(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
-	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023")
+	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023", "Biceps the size of my chest")
 	assert.NoError(t, err)
 
 	friendsList, err := buildFriendsList(db)
@@ -48,7 +48,7 @@ func TestFriendsListRoute(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/friends", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023"}]`
+	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023","Notes":"Biceps the size of my chest"}]`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
@@ -64,7 +64,7 @@ func TestFriendIDRoute(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
@@ -80,7 +80,7 @@ func TestFriendNameRoute(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023"}`
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
@@ -114,9 +114,9 @@ func TestAddFriendRoute(t *testing.T) {
 	router.POST("/friends", friendsHandler.PostNewFriend)
 
 	newFriend := Friend{
-		ID:            "2",
 		Name:          "Jane Doe",
 		LastContacted: "15/01/2024",
+		Notes:         "I don't think she's a real person",
 	}
 	jsonValue, _ := json.Marshal(newFriend)
 
@@ -130,10 +130,10 @@ func TestAddFriendRoute(t *testing.T) {
 	var resp map[string]string
 	err = json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "2 (Jane Doe) added successfully", resp["message"])
+	assert.Equal(t, "Jane Doe added successfully", resp["message"])
 
 	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", "2").Scan(&count)
+	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }
@@ -143,7 +143,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
@@ -175,7 +175,7 @@ func TestPutFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
@@ -187,6 +187,7 @@ func TestPutFriend(t *testing.T) {
 		ID:            "1",
 		Name:          "Master Chief",
 		LastContacted: "15/01/2024",
+		Notes:         "Doesn't talk much",
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
@@ -203,8 +204,9 @@ func TestPutFriend(t *testing.T) {
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend Friend
-	err = db.QueryRow("SELECT name, lastContacted FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted)
+	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
+	assert.Equal(t, updatedFriend.Notes, friend.Notes)
 }

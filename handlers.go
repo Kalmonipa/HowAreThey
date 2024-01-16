@@ -48,7 +48,7 @@ func (h *FriendsHandler) GetFriends(c *gin.Context) {
 func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	randomFriend, err := pickRandomFriend(h.FriendsList)
 	if err != nil {
-		LogMessage(LogLevelFatal, "error: %v", err)
+		LogMessage(LogLevelFatal, "Failed to get a random friend: %v", err)
 		c.JSON(http.StatusNotFound, "failed to pick a friend")
 	}
 
@@ -103,7 +103,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	successMsg := newFriend.ID + " (" + newFriend.Name + ") added successfully"
+	successMsg := newFriend.Name + " added successfully"
 
 	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
 }
