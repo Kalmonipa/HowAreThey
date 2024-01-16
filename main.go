@@ -155,10 +155,12 @@ func updateLastContacted(friend Friend, todaysDate time.Time) Friend {
 	return friend
 }
 
+// Returns how many elements are in the list
 func getFriendCount(friends FriendsList) int {
 	return len(friends)
 }
 
+// Returns the friend based on the ID provided
 func getFriendByID(id string, friends FriendsList) (*Friend, error) {
 	for _, friend := range friends {
 		if friend.ID == id {
@@ -168,6 +170,8 @@ func getFriendByID(id string, friends FriendsList) (*Friend, error) {
 	return nil, errors.New("friend not found")
 }
 
+// Returns the friend based on the name provided
+// This function replaces whitespace with hyphens and makes it lower case
 func getFriendByName(name string, friends FriendsList) (*Friend, error) {
 	for _, friend := range friends {
 		lowercased := strings.ToLower(friend.Name)
@@ -213,6 +217,23 @@ func deleteFriend(db *sql.DB, id string) error {
 	return nil
 }
 
+// Updates a friend with new details
+func updateFriend(db *sql.DB, id string, updatedFriend Friend) error {
+	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(updatedFriend.Name, updatedFriend.LastContacted, id)
+	if err != nil {
+		return err
+	}
+
+	LogMessage(LogLevelInfo, "Friend updated successfully")
+	return nil
+}
+
 // Lists all the friends names in the friendsList
 func listFriendsNames(friends FriendsList) []string {
 	var friendsNames []string
@@ -229,20 +250,20 @@ func setupRouter(handler *FriendsHandler) *gin.Engine {
 	// TODO: Figure out if .Default() is what I need or something else
 	r := gin.Default()
 
-	r.DELETE("/friends/:id", handler.DeleteFriendHandler)
-	r.GET("/friends", handler.GetFriendsHandler)
-	r.GET("/friends/random", handler.GetRandomFriendHandler)
-	r.GET("/friends/count", handler.GetFriendCountHandler)
-	r.GET("/friends/id/:id", handler.GetFriendByIDHandler)
-	r.GET("/friends/name/:name", handler.GetFriendByNameHandler)
-	r.POST("/friends", handler.PostNewFriendHandler)
+	r.DELETE("/friends/:id", handler.DeleteFriend)
+	r.GET("/friends", handler.GetFriends)
+	r.GET("/friends/random", handler.GetRandomFriend)
+	r.GET("/friends/count", handler.GetFriendCount)
+	r.GET("/friends/id/:id", handler.GetFriendByID)
+	r.GET("/friends/name/:name", handler.GetFriendByName)
+	r.POST("/friends", handler.PostNewFriend)
+	r.PUT("/friends/:id", handler.PutFriend)
 
 	return r
 }
 
 func main() {
 
-	//var friendsFilePath = "config/friends.yaml"
 	var dbFilePath = "sql/friends.db"
 
 	// Sets up the logger
