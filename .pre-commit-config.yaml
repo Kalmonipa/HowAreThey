@@ -6,6 +6,7 @@ repos:
   - id: end-of-file-fixer
   - id: check-yaml
   - id: check-added-large-files
+    exclude: frontend/package-lock.json
   - id: mixed-line-ending
   - id: no-commit-to-branch
     args: [--branch, main]
