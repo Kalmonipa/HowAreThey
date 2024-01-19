@@ -10,25 +10,33 @@ repos:
   - id: mixed-line-ending
   - id: no-commit-to-branch
     args: [--branch, main]
-- repo: https://github.com/golangci/golangci-lint
-  rev: v1.55.2
+# - repo: https://github.com/golangci/golangci-lint
+#   rev: v1.55.2
+#   hooks:
+#   - id: golangci-lint
+#     args:
+#       - --enable=goimports
+#       - --enable=gofmt
+#       - --enable=vet
+#       - --enable=revive
+#       - --enable=staticcheck
+#     files: backend/
+- repo: local
   hooks:
   - id: golangci-lint
-    args:
-      - --enable=goimports
-      - --enable=gofmt
-      - --enable=vet
-      - --enable=revive
-      - --enable=staticcheck
--   repo: local
-    hooks:
-    -   id: go-unit-tests
-        name: go unit tests
-        entry: go test ./...
-        pass_filenames: false
-        types: [go]
-        language: system
-        always_run: true
+    name: golangci-lint
+    entry: ./scripts/run-golangci-lint.sh
+    language: script
+    always_run: true
+- repo: local
+  hooks:
+  - id: go-unit-tests
+    name: go unit tests
+    entry: cd backend && go test -v ./...
+    pass_filenames: false
+    types: [go]
+    language: system
+    always_run: true
 - repo: https://github.com/petalmd/dockerfile-pre-commit
   rev: 'v1.0'
   hooks:

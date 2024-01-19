@@ -1,11 +1,15 @@
-package main
+package test
 
 import (
 	"bytes"
 	"encoding/json"
+	"howarethey/pkg/handler"
+	"howarethey/pkg/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +19,7 @@ import (
 func TestFriendsCountRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := setupRouter(friendsHandler)
+	router := handler.SetupRouter(friendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/count", nil)
@@ -30,7 +34,7 @@ func TestFriendsListRoute(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 
-	db, err := setupTestDB()
+	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -39,10 +43,10 @@ func TestFriendsListRoute(t *testing.T) {
 	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023", "Biceps the size of my chest")
 	assert.NoError(t, err)
 
-	friendsList, err := buildFriendsList(db)
+	friendsList, err := models.BuildFriendsList(db)
 	assert.NoError(t, err)
-	friendsHandler := NewFriendsHandler(friendsList, db)
-	router := setupRouter(friendsHandler)
+	friendsHandler := handler.NewFriendsHandler(friendsList, db)
+	router := handler.SetupRouter(friendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends", nil)
@@ -58,7 +62,7 @@ func TestFriendsListRoute(t *testing.T) {
 func TestFriendIDRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := setupRouter(friendsHandler)
+	router := handler.SetupRouter(friendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
@@ -74,7 +78,7 @@ func TestFriendIDRoute(t *testing.T) {
 func TestFriendNameRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := setupRouter(friendsHandler)
+	router := handler.SetupRouter(friendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
@@ -90,7 +94,7 @@ func TestFriendNameRoute(t *testing.T) {
 func TestMissingFriendIDRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := setupRouter(friendsHandler)
+	router := handler.SetupRouter(friendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/id/100", nil)
@@ -104,16 +108,16 @@ func TestMissingFriendIDRoute(t *testing.T) {
 
 // Test POST /friends
 func TestAddFriendRoute(t *testing.T) {
-	db, err := setupTestDB()
+	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &FriendsHandler{DB: db}
+	friendsHandler := &handler.FriendsHandler{DB: db}
 	router.POST("/friends", friendsHandler.PostNewFriend)
 
-	newFriend := Friend{
+	newFriend := models.Friend{
 		Name:          "Jane Doe",
 		LastContacted: "15/01/2024",
 		Notes:         "I don't think she's a real person",
@@ -139,7 +143,7 @@ func TestAddFriendRoute(t *testing.T) {
 }
 
 func TestDeleteFriendRoute(t *testing.T) {
-	db, err := setupTestDB()
+	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -148,7 +152,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &FriendsHandler{DB: db}
+	friendsHandler := &handler.FriendsHandler{DB: db}
 	router.DELETE("/friends/:id", friendsHandler.DeleteFriend)
 
 	req, _ := http.NewRequest("DELETE", "/friends/1", nil)
@@ -171,7 +175,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 // Tests PUT /friends/{ID}
 func TestPutFriend(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	db, err := setupTestDB()
+	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -180,10 +184,10 @@ func TestPutFriend(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &FriendsHandler{DB: db}
+	friendsHandler := &handler.FriendsHandler{DB: db}
 	router.PUT("/friends/:id", friendsHandler.PutFriend)
 
-	updatedFriend := Friend{
+	updatedFriend := models.Friend{
 		ID:            "1",
 		Name:          "Master Chief",
 		LastContacted: "15/01/2024",
@@ -203,7 +207,7 @@ func TestPutFriend(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
-	var friend Friend
+	var friend models.Friend
 	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
