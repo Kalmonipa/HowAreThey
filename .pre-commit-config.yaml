@@ -20,15 +20,16 @@ repos:
       - --enable=vet
       - --enable=revive
       - --enable=staticcheck
--   repo: local
-    hooks:
-    -   id: go-unit-tests
-        name: go unit tests
-        entry: go test ./...
-        pass_filenames: false
-        types: [go]
-        language: system
-        always_run: true
+    files: backend/
+- repo: local
+  hooks:
+  - id: go-unit-tests
+    name: go unit tests
+    entry: cd backend && go test -v ./...
+    pass_filenames: false
+    types: [go]
+    language: system
+    always_run: true
 - repo: https://github.com/petalmd/dockerfile-pre-commit
   rev: 'v1.0'
   hooks:
