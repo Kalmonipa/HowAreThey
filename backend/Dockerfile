@@ -28,6 +28,7 @@ WORKDIR /root/
 RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
 # https://pkgs.org/download/libsqlite3-0
     libsqlite3-0=3.34.1-3 \
+    ca-certificates=20210119 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the pre-built binary file from the first stage
