@@ -83,6 +83,8 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, randomFriend)
+
+	models.SendNotification(randomFriend)
 }
 
 // GET /friends/count

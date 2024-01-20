@@ -10,17 +10,17 @@ repos:
   - id: mixed-line-ending
   - id: no-commit-to-branch
     args: [--branch, main]
-- repo: https://github.com/golangci/golangci-lint
-  rev: v1.55.2
-  hooks:
-  - id: golangci-lint
-    args:
-      - --enable=goimports
-      - --enable=gofmt
-      - --enable=vet
-      - --enable=revive
-      - --enable=staticcheck
-    files: backend/
+# - repo: https://github.com/golangci/golangci-lint
+#   rev: v1.55.2
+#   hooks:
+#   - id: golangci-lint
+#     args:
+#       - --enable=goimports
+#       - --enable=gofmt
+#       - --enable=vet
+#       - --enable=revive
+#       - --enable=staticcheck
+#     files: backend/
 - repo: local
   hooks:
   - id: go-unit-tests

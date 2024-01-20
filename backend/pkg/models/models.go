@@ -1,14 +1,24 @@
 package models
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"howarethey/pkg/logger"
 	"math/rand"
+	"net/http"
+	"os"
 	"strings"
 	"time"
 )
+
+// DiscordWebhookPayload defines the JSON structure for the webhook payload
+type DiscordWebhookPayload struct {
+	Username *string `json:"username,omitempty"`
+	Content  *string `json:"content"`
+}
 
 type Friend struct {
 	ID            string
@@ -178,6 +188,37 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 	}
 
 	return Friend{}, errors.New("unable to select a random friend")
+}
+
+func SendNotification(friend Friend) {
+	var username = "HowAreThey"
+	var url = os.Getenv("DISCORD_WEBHOOK")
+
+	var content = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
+		friend.LastContacted + ". "
+
+	if friend.Notes != "" {
+		content = content + "Here's what you've got written down for them: " + friend.Notes
+	}
+
+	// Create the payload
+	payload := DiscordWebhookPayload{
+		Content:  &content,
+		Username: &username,
+	}
+
+	// Marshal the payload to JSON
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		panic(err)
+	}
+
+	// Send the POST request
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
 }
 
 // Updates a friend with new details
