@@ -9,7 +9,6 @@ import (
 	"howarethey/pkg/logger"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -190,9 +189,8 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 	return Friend{}, errors.New("unable to select a random friend")
 }
 
-func SendNotification(friend Friend) {
+func SendNotification(friend Friend, url string) {
 	var username = "HowAreThey"
-	var url = os.Getenv("DISCORD_WEBHOOK")
 
 	var content = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
 		friend.LastContacted + ". "
