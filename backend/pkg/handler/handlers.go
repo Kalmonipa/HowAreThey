@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -76,6 +77,8 @@ func (h *FriendsHandler) GetFriends(c *gin.Context) {
 
 // GET /friends/random
 func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
+	url := os.Getenv("DISCORD_WEBHOOK")
+
 	randomFriend, err := models.PickRandomFriend(h.FriendsList)
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to get a random friend: %v", err)
@@ -84,7 +87,9 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 
 	c.JSON(http.StatusOK, randomFriend)
 
-	models.SendNotification(randomFriend)
+	if url != "" {
+		models.SendNotification(randomFriend, url)
+	}
 }
 
 // GET /friends/count

@@ -2,9 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"log"
+	"net/http"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
+	cron "github.com/robfig/cron/v3"
 
 	"howarethey/pkg/handler"
 	"howarethey/pkg/logger"
@@ -51,6 +54,22 @@ func createTable(db *sql.DB) error {
 	return nil
 }
 
+// GetRandomFriendScheduled is used for scheduled calls, without a Gin context
+func GetRandomFriendScheduled() {
+	// You can either make an internal call to the existing Gin handler
+	// Or extract the logic into a separate function and call it here
+	// ...
+
+	// Example of making an HTTP request to the endpoint
+	resp, err := http.Get("http://localhost:8080/friends/random")
+	if err != nil {
+		log.Println("Error calling GetRandomFriend:", err)
+		return
+	}
+	defer resp.Body.Close()
+	// Handle the response as needed
+}
+
 func main() {
 
 	var dbFilePath = "sql/friends.db"
@@ -81,6 +100,21 @@ func main() {
 	friendsHandler := handler.NewFriendsHandler(friendsList, db)
 
 	router := handler.SetupRouter(friendsHandler)
+
+	// Initialize the cron scheduler
+	c := cron.New
+	// Schedule your task: "@weekly" runs once every week
+	_, err = c.AddFunc("@weekly", func() {
+		// Call your GetRandomFriend function
+		// You might need to adjust this call based on your implementation
+		GetRandomFriendScheduled()
+	})
+	if err != nil {
+		log.Fatal("Error scheduling the task: ", err)
+	}
+
+	// Start the cron scheduler
+	c.Start()
 
 	err = router.Run()
 	if err != nil {
