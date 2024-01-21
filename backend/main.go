@@ -59,7 +59,7 @@ func GetRandomFriendScheduled() {
 	// Example of making an HTTP request to the endpoint
 	resp, err := http.Get("http://localhost:8080/friends/random")
 	if err != nil {
-		logger.LogMessage(logger.LogLevelError, "Error calling GetRandomFriend:", err)
+		logger.LogMessage(logger.LogLevelError, "Error calling GetRandomFriend: %v", err)
 		return
 	}
 	defer resp.Body.Close()

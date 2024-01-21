@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -90,6 +91,8 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	if url != "" {
 		models.SendNotification(randomFriend, url)
 	}
+
+	models.UpdateLastContacted(randomFriend, time.Now())
 }
 
 // GET /friends/count
