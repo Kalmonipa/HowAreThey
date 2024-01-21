@@ -3,24 +3,15 @@ version: '3'
 services:
   howarethey:
     container_name: howarethey
-    # The official v2 Traefik docker image
     image: kalmonipa/howarethey:v0.7
     environment:
-      - DISCORD_WEBHOOK=https://discord.com/api/webhooks/1035694877448609792/cQci_9axVfCaMx32JgPZSUL-fPWUMB9naT_6y3YVw6Zb5CNz0fr-_Rs_1TsQ3uuJc8mW
-      - CRON="* * * * *"
+        # Discord Webhook to send notifications too. Read the discord webhook docs to get one
+      - DISCORD_WEBHOOK=https://discord.com/api/webhooks/myexamplewebhook
+        # Picks a friend at 7am every Monday
+      - CRON="0 7 * * MON"
     ports:
       # The Web UI (enabled by --api.insecure=true)
       - "8022:8080"
-        #    volumes:
-      #      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      - "traefik.http.routers.traefik.rule=Host(`traefik.kalmonipa.net`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-    networks:
-      - jellyfish_fields
-
-networks:
-  jellyfish_fields:
-    driver: bridge
-    external: true
-    name: jellyfish_fields
+    volumes:
+        # Define where your persistent storage goes too
+      - sql/friend.db:/sql/friends.db
