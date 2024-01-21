@@ -92,7 +92,13 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 		models.SendNotification(randomFriend, url)
 	}
 
-	models.UpdateLastContacted(randomFriend, time.Now())
+	updatedFriend := models.UpdateLastContacted(randomFriend, time.Now())
+
+	err = models.UpdateFriend(h.DB, updatedFriend.ID, updatedFriend)
+	if err != nil {
+		logger.LogMessage(logger.LogLevelFatal, "Failed to update friend: %v", err)
+		c.JSON(http.StatusNotFound, "failed to update a friend")
+	}
 }
 
 // GET /friends/count
