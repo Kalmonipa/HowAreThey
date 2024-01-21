@@ -69,6 +69,7 @@ func GetRandomFriendScheduled() {
 func main() {
 
 	var dbFilePath = "sql/friends.db"
+	var schedule string
 
 	// Sets up the logger
 	logger.SetupLogger()
@@ -99,8 +100,14 @@ func main() {
 
 	// Initialize the cron scheduler
 	c := cron.New()
+
+	if os.Getenv("CRON") != "" {
+		schedule = os.Getenv("CRON")
+	} else {
+		schedule = "@weekly"
+	}
 	// Schedule your task: "@weekly" runs once every week
-	c.AddFunc("@weekly", func() {
+	c.AddFunc(schedule, func() {
 		GetRandomFriendScheduled()
 	})
 
