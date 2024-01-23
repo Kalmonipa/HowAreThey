@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var friendsList = models.FriendsList{
+var mockFriendsList = models.FriendsList{
 	models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
 	models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
 }
@@ -21,7 +21,9 @@ var futureFriendsList = models.FriendsList{
 	models.Friend{ID: "3", Name: "Doctor Who", LastContacted: "25/12/2070", Notes: "Lives in a phonebox"},
 }
 
-var friendsHandler = &handler.FriendsHandler{FriendsList: friendsList}
+var mockFriendsHandler = &handler.FriendsHandler{
+	FriendsList: mockFriendsList,
+}
 
 // setupTestDB creates and returns a new database for testing
 func SetupTestDB() (*sql.DB, error) {
@@ -46,21 +48,17 @@ func SetupTestDB() (*sql.DB, error) {
 
 func TestPickRandom(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		friend, err := models.PickRandomFriend(friendsList)
-		if err != nil {
-			t.Errorf("RandomFriend returned an error: %v", err)
-		}
+		friend, err := models.PickRandomFriend(mockFriendsList)
+		assert.NoError(t, err)
 
-		if !containsFriend(friendsList, friend) {
+		if !containsFriend(mockFriendsList, friend) {
 			t.Errorf("Chosen friend %+v not found in the friends list", friend)
 		}
 	}
 
 	emptyFriends := models.FriendsList{}
 	_, err := models.PickRandomFriend(emptyFriends)
-	if err == nil {
-		t.Errorf("RandomFriend should return an error when the slice is empty")
-	}
+	assert.Error(t, err)
 }
 
 func TestCalculateWeight(t *testing.T) {
@@ -68,10 +66,8 @@ func TestCalculateWeight(t *testing.T) {
 
 	todaysDate := time.Date(2023, time.December, 23, 0, 0, 0, 0, time.UTC)
 
-	weight, err := models.CalculateWeight(friendsList[0].LastContacted, todaysDate)
-	if err != nil {
-		t.Errorf("Failed to calculate the weight of %s", friendsList[0].Name)
-	}
+	weight, err := models.CalculateWeight(mockFriendsList[0].LastContacted, todaysDate)
+	assert.NoError(t, err)
 
 	assert.Equal(t, expectedWeight, weight)
 }
@@ -100,8 +96,8 @@ func TestListFriendsNames(t *testing.T) {
 	expectedResult := []string{"John Wick", "Peter Parker"}
 	unexpectedResult := []string{"John Wick", "Peter Parker", "Shouldn't Exist"}
 
-	assert.Equal(t, expectedResult, models.ListFriendsNames(friendsList))
-	assert.NotEqual(t, unexpectedResult, models.ListFriendsNames(friendsList))
+	assert.Equal(t, expectedResult, models.ListFriendsNames(mockFriendsList))
+	assert.NotEqual(t, unexpectedResult, models.ListFriendsNames(mockFriendsList))
 }
 
 func TestAddFriend(t *testing.T) {
@@ -147,7 +143,7 @@ func TestDeleteFriend(t *testing.T) {
 	assert.Equal(t, 1, friendCount, "Expected new friend to be deleted")
 }
 
-func TestUpdateFriend(t *testing.T) {
+func TestSqlUpdateFriend(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, err := SetupTestDB()
 	assert.NoError(t, err)
@@ -162,7 +158,7 @@ func TestUpdateFriend(t *testing.T) {
 		Notes:         "Nice guy",
 	}
 
-	err = models.UpdateFriend(db, "1", updatedFriend)
+	err = models.SqlUpdateFriend(db, "1", updatedFriend)
 	assert.NoError(t, err)
 
 	var friend models.Friend

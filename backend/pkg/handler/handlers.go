@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -85,11 +86,25 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 		c.JSON(http.StatusNotFound, "failed to pick a friend")
 	}
 
-	c.JSON(http.StatusOK, randomFriend)
-
 	if url != "" {
 		models.SendNotification(randomFriend, url)
 	}
+
+	updatedFriend := models.UpdateLastContacted(randomFriend, time.Now())
+
+	err = models.SqlUpdateFriend(h.DB, updatedFriend.ID, updatedFriend)
+	if err != nil {
+		logger.LogMessage(logger.LogLevelFatal, "Failed to update friend: %v", err)
+		c.JSON(http.StatusNotFound, "failed to update a friend")
+	}
+
+	h.FriendsList, err = models.UpdateFriend(h.FriendsList, updatedFriend)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, randomFriend)
 }
 
 // GET /friends/count
@@ -155,7 +170,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		return
 	}
 
-	if err := models.UpdateFriend(h.DB, id, updatedFriend); err != nil {
+	if err := models.SqlUpdateFriend(h.DB, id, updatedFriend); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
