@@ -203,9 +203,7 @@ func UpdateFriend(friendList FriendsList, newFriend Friend) (FriendsList, error)
 	for i, friend := range friendList {
 		logger.LogMessage(logger.LogLevelDebug, "Checking %s", friend.Name)
 		if friend.ID == newFriend.ID {
-			friendList[i].Name = newFriend.Name                   // Update directly in friendList
-			friendList[i].LastContacted = newFriend.LastContacted // Update directly in friendList
-			friendList[i].Notes = newFriend.Notes                 // Update directly in friendList
+			friendList[i] = newFriend
 		}
 	}
 	return friendList, nil
