@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"howarethey/pkg/handler"
+	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -19,7 +21,7 @@ import (
 func TestFriendsCountRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := handler.SetupRouter(friendsHandler)
+	router := handler.SetupRouter(mockFriendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/count", nil)
@@ -38,21 +40,13 @@ func TestFriendsListRoute(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
-	assert.NoError(t, err)
-	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023", "Biceps the size of my chest")
-	assert.NoError(t, err)
-
-	friendsList, err := models.BuildFriendsList(db)
-	assert.NoError(t, err)
-	friendsHandler := handler.NewFriendsHandler(friendsList, db)
-	router := handler.SetupRouter(friendsHandler)
+	router := handler.SetupRouter(mockFriendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends", nil)
 	router.ServeHTTP(w, req)
 
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"},{"ID":"2","Name":"Jack Reacher","LastContacted":"06/06/2023","Notes":"Biceps the size of my chest"}]`
+	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Notes":"I think he's Spiderman"}]`
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, expectedResult, w.Body.String())
@@ -62,7 +56,7 @@ func TestFriendsListRoute(t *testing.T) {
 func TestFriendIDRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := handler.SetupRouter(friendsHandler)
+	router := handler.SetupRouter(mockFriendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
@@ -78,7 +72,7 @@ func TestFriendIDRoute(t *testing.T) {
 func TestFriendNameRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := handler.SetupRouter(friendsHandler)
+	router := handler.SetupRouter(mockFriendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
@@ -94,7 +88,7 @@ func TestFriendNameRoute(t *testing.T) {
 func TestMissingFriendIDRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := handler.SetupRouter(friendsHandler)
+	router := handler.SetupRouter(mockFriendsHandler)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/friends/id/100", nil)
@@ -106,6 +100,44 @@ func TestMissingFriendIDRoute(t *testing.T) {
 	assert.Equal(t, expectedResult, w.Body.String())
 }
 
+// GET /friends/random
+// Tests picking a random friend and updating the last contacted date for them
+func TestGetRandomFriend(t *testing.T) {
+
+	gin.SetMode(gin.TestMode)
+
+	db, err := SetupTestDB()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	mockFriendsHandler := handler.NewFriendsHandler(mockFriendsList, db)
+
+	mockRouter := handler.SetupRouter(mockFriendsHandler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/friends/random", nil)
+	mockRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Unmarshal and check the response
+	var friendResponse models.Friend
+	err = json.Unmarshal(w.Body.Bytes(), &friendResponse)
+	assert.NoError(t, err)
+
+	found := false
+	today := time.Now().Format("02/01/2006")
+	for _, mockFriend := range mockFriendsHandler.FriendsList {
+		logger.LogMessage(logger.LogLevelDebug, mockFriend.Name)
+		if mockFriend.ID == friendResponse.ID && mockFriend.Name == friendResponse.Name && mockFriend.LastContacted == today {
+			found = true
+			break
+		}
+	}
+
+	assert.True(t, found, "The returned friend should be in the mock friends list")
+}
+
 // Test POST /friends
 func TestAddFriendRoute(t *testing.T) {
 	db, err := SetupTestDB()
@@ -114,8 +146,8 @@ func TestAddFriendRoute(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &handler.FriendsHandler{DB: db}
-	router.POST("/friends", friendsHandler.PostNewFriend)
+	mockFriendsHandler := &handler.FriendsHandler{DB: db}
+	router.POST("/friends", mockFriendsHandler.PostNewFriend)
 
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
@@ -152,8 +184,8 @@ func TestDeleteFriendRoute(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &handler.FriendsHandler{DB: db}
-	router.DELETE("/friends/:id", friendsHandler.DeleteFriend)
+	mockFriendsHandler := &handler.FriendsHandler{DB: db}
+	router.DELETE("/friends/:id", mockFriendsHandler.DeleteFriend)
 
 	req, _ := http.NewRequest("DELETE", "/friends/1", nil)
 	w := httptest.NewRecorder()
@@ -184,8 +216,8 @@ func TestPutFriend(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	friendsHandler := &handler.FriendsHandler{DB: db}
-	router.PUT("/friends/:id", friendsHandler.PutFriend)
+	mockFriendsHandler := &handler.FriendsHandler{DB: db}
+	router.PUT("/friends/:id", mockFriendsHandler.PutFriend)
 
 	updatedFriend := models.Friend{
 		ID:            "1",

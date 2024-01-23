@@ -28,25 +28,6 @@ type Friend struct {
 
 type FriendsList []Friend
 
-// addFriend inserts a new friend into the database
-func AddFriend(db *sql.DB, newFriend Friend) error {
-	stmt, err := db.Prepare("INSERT INTO friends(name, lastContacted, notes) VALUES(?, ?, ?)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(newFriend.Name, newFriend.LastContacted, newFriend.Notes)
-	if err != nil {
-		return err
-	}
-
-	successMsg := newFriend.Name + " added successfully"
-
-	logger.LogMessage(logger.LogLevelInfo, successMsg)
-	return nil
-}
-
 // Builds the list from the yaml file specified
 func BuildFriendsList(db *sql.DB) (FriendsList, error) {
 	// Query the database
@@ -161,7 +142,6 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 	weights := make([]int, len(friends))
 
 	for i, friend := range friends {
-
 		weight, err := CalculateWeight(friend.LastContacted, time.Now())
 		if err != nil {
 			return Friend{}, err
@@ -219,8 +199,47 @@ func SendNotification(friend Friend, url string) {
 	defer resp.Body.Close()
 }
 
+func UpdateFriend(friendList FriendsList, newFriend Friend) (FriendsList, error) {
+	for i, friend := range friendList {
+		logger.LogMessage(logger.LogLevelDebug, "Checking %s", friend.Name)
+		if friend.ID == newFriend.ID {
+			friendList[i].Name = newFriend.Name                   // Update directly in friendList
+			friendList[i].LastContacted = newFriend.LastContacted // Update directly in friendList
+			friendList[i].Notes = newFriend.Notes                 // Update directly in friendList
+		}
+	}
+	return friendList, nil
+}
+
+func UpdateLastContacted(friend Friend, todaysDate time.Time) Friend {
+	friend.LastContacted = todaysDate.Format("02/01/2006")
+
+	return friend
+}
+
+// SQL Functions
+
+// addFriend inserts a new friend into the database
+func AddFriend(db *sql.DB, newFriend Friend) error {
+	stmt, err := db.Prepare("INSERT INTO friends(name, lastContacted, notes) VALUES(?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(newFriend.Name, newFriend.LastContacted, newFriend.Notes)
+	if err != nil {
+		return err
+	}
+
+	successMsg := newFriend.Name + " added successfully"
+
+	logger.LogMessage(logger.LogLevelInfo, successMsg)
+	return nil
+}
+
 // Updates a friend with new details
-func UpdateFriend(db *sql.DB, id string, updatedFriend Friend) error {
+func SqlUpdateFriend(db *sql.DB, id string, updatedFriend Friend) error {
 	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? , notes = ? WHERE id = ?")
 	if err != nil {
 		return err
@@ -232,12 +251,6 @@ func UpdateFriend(db *sql.DB, id string, updatedFriend Friend) error {
 		return err
 	}
 
-	logger.LogMessage(logger.LogLevelInfo, "Friend updated successfully")
+	logger.LogMessage(logger.LogLevelInfo, "Friend with ID %s updated successfully", updatedFriend.ID)
 	return nil
-}
-
-func UpdateLastContacted(friend Friend, todaysDate time.Time) Friend {
-	friend.LastContacted = todaysDate.Format("02/01/2006")
-
-	return friend
 }
