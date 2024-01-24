@@ -23,6 +23,25 @@ func SetupLogger() {
 	// Custom logger setup
 	log.SetOutput(os.Stdout)
 	log.SetFlags(0)
+
+	// Read log level from environment variable
+	envLogLevel := os.Getenv("LOG_LEVEL")
+
+	// Map string values to log level constants
+	switch envLogLevel {
+	case "DEBUG":
+		minLogLevel = LogLevelDebug
+	case "INFO":
+		minLogLevel = LogLevelInfo
+	case "WARN":
+		minLogLevel = LogLevelWarn
+	case "ERROR":
+		minLogLevel = LogLevelError
+	case "FATAL":
+		minLogLevel = LogLevelFatal
+	default:
+		minLogLevel = LogLevelInfo
+	}
 }
 
 // logMessage function that supports formatted strings

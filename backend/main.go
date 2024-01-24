@@ -71,10 +71,10 @@ func main() {
 	var dbFilePath = "sql/friends.db"
 	var schedule string
 
-	logger.LogMessage(logger.LogLevelInfo, "Starting app")
-
 	// Sets up the logger
 	logger.SetupLogger()
+
+	logger.LogMessage(logger.LogLevelInfo, "Starting app")
 
 	// Open the database connection
 	db, err := createOrOpenSQLiteDB(dbFilePath)
