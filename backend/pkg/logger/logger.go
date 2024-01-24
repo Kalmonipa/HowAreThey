@@ -50,7 +50,7 @@ func LogMessage(level int, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 
 	if level < minLogLevel {
-		return // Skip logging if the level is below the minimum
+		return
 	}
 
 	// Convert log level to string
