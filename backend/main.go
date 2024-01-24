@@ -71,6 +71,8 @@ func main() {
 	var dbFilePath = "sql/friends.db"
 	var schedule string
 
+	logger.LogMessage(logger.LogLevelInfo, "Starting app")
+
 	// Sets up the logger
 	logger.SetupLogger()
 
@@ -80,6 +82,8 @@ func main() {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to open database: %v", err)
 	}
 	defer db.Close()
+
+	logger.LogMessage(logger.LogLevelInfo, "Database opened")
 
 	// Create the table
 	if err := createTable(db); err != nil {
@@ -93,26 +97,29 @@ func main() {
 		panic(err)
 	}
 
-	// Create an instance of your handler struct with the friendsList
 	friendsHandler := handler.NewFriendsHandler(friendsList, db)
 
 	router := handler.SetupRouter(friendsHandler)
 
-	// Initialize the cron scheduler
 	c := cron.New()
 
+	// Get the cron schedule or default to @weekly if it's not passed in
 	if os.Getenv("CRON") != "" {
 		schedule = os.Getenv("CRON")
 	} else {
 		schedule = "@weekly"
 	}
-	// Schedule your task: "@weekly" runs once every week
+
+	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", schedule)
+
 	c.AddFunc(schedule, func() {
 		GetRandomFriendScheduled()
 	})
 
 	// Start the cron scheduler
 	c.Start()
+
+	logger.LogMessage(logger.LogLevelInfo, "Starting webserver")
 
 	err = router.Run()
 	if err != nil {
