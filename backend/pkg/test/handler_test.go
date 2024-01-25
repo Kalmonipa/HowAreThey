@@ -17,128 +17,113 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func performRequest(r http.Handler, method, path string, body []byte) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(method, path, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	r.ServeHTTP(recorder, req)
+	return recorder
+}
+
 func setupMockHandler() *handler.FriendsHandler {
 	mockFriendsList := models.FriendsList{
 		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
 		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
 	}
+
+	mockDb, _ := SetupTestDB()
+
 	mockFriendsHandler := &handler.FriendsHandler{
 		FriendsList: mockFriendsList,
+		DB:          mockDb,
 	}
 
 	return mockFriendsHandler
 }
 
+func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
+	mockFriendsHandler := setupMockHandler()
+	mockRouter := handler.SetupRouter(mockFriendsHandler)
+
+	return mockRouter, mockFriendsHandler, nil
+}
+
 // Test GET /friends/count
 func TestFriendsCountRoute(t *testing.T) {
+	mockRouter, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
-	mockFriendsHandler := setupMockHandler()
+	response := performRequest(mockRouter, "GET", "/friends/count", nil)
 
-	router := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/count", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "2", w.Body.String())
+	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, "2", response.Body.String())
 }
 
 // Test GET /friends
 func TestFriendsListRoute(t *testing.T) {
-
-	mockFriendsHandler := setupMockHandler()
-
-	db, err := SetupTestDB()
+	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	router := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends", nil)
-	router.ServeHTTP(w, req)
+	response := performRequest(router, "GET", "/friends", nil)
 
 	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Notes":"I think he's Spiderman"}]`
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
+	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, expectedResult, response.Body.String())
 }
 
 // Test GET /friends/id/:id
 func TestFriendIDRoute(t *testing.T) {
+	router, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
-	mockFriendsHandler := setupMockHandler()
-
-	router := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/id/1", nil)
-	router.ServeHTTP(w, req)
+	response := performRequest(router, "GET", "/friends/id/1", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
+	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, expectedResult, response.Body.String())
 }
 
 // Test GET /friends/name/:name
 func TestFriendNameRoute(t *testing.T) {
+	router, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
-	mockFriendsHandler := setupMockHandler()
-
-	router := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/name/john-wick", nil)
-	router.ServeHTTP(w, req)
+	response := performRequest(router, "GET", "/friends/name/john-wick", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
+	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, expectedResult, response.Body.String())
 }
 
 // Test GET /friends/id/:id
 func TestMissingFriendIDRoute(t *testing.T) {
+	router, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
-	mockFriendsHandler := setupMockHandler()
-
-	router := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/id/100", nil)
-	router.ServeHTTP(w, req)
+	response := performRequest(router, "GET", "/friends/id/100", nil)
 
 	expectedResult := `{"error":"friend not found"}`
 
-	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, expectedResult, w.Body.String())
+	assert.Equal(t, 404, response.Code)
+	assert.Equal(t, expectedResult, response.Body.String())
 }
 
-// GET /friends/random
+// Test GET /friends/random
 func TestGetRandomFriend(t *testing.T) {
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
-	}
 
-	db, err := SetupTestDB()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	mockFriendsHandler := handler.NewFriendsHandler(mockFriendsList, db)
+	response := performRequest(mockRouter, "GET", "/friends/random", nil)
 
-	mockRouter := handler.SetupRouter(mockFriendsHandler)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/random", nil)
-	mockRouter.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var friendResponse models.Friend
-	err = json.Unmarshal(w.Body.Bytes(), &friendResponse)
+	err = json.Unmarshal(response.Body.Bytes(), &friendResponse)
 	assert.NoError(t, err)
 
 	found := false
@@ -156,14 +141,6 @@ func TestGetRandomFriend(t *testing.T) {
 
 // Test POST /friends
 func TestAddFriendRoute(t *testing.T) {
-	db, err := SetupTestDB()
-	assert.NoError(t, err)
-	defer db.Close()
-
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db}
-	router.POST("/friends", mockFriendsHandler.PostNewFriend)
-
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
 		LastContacted: "15/01/2024",
@@ -171,49 +148,44 @@ func TestAddFriendRoute(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(newFriend)
 
-	req, _ := http.NewRequest("POST", "/friends", bytes.NewBuffer(jsonValue))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	response := performRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusCreated, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "Jane Doe added successfully", resp["message"])
 
 	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
+	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }
 
+// Test DELETE /friend/:id
 func TestDeleteFriendRoute(t *testing.T) {
-	db, err := SetupTestDB()
-	assert.NoError(t, err)
-	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db}
-	router.DELETE("/friends/:id", mockFriendsHandler.DeleteFriend)
+	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "Nice guy")
+	assert.NoError(t, err)
 
-	req, _ := http.NewRequest("DELETE", "/friends/1", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	response := performRequest(mockRouter, "DELETE", "/friends/1", nil)
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusCreated, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "Friend removed successfully", resp["message"])
 
 	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", "1").Scan(&count)
+	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", "1").Scan(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 }
@@ -226,26 +198,17 @@ func TestPutFriend(t *testing.T) {
 		LastContacted: "06/06/2023",
 		Notes:         "Nice guy",
 	}
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
-	}
 
-	db, err := SetupTestDB()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	err = insertMockFriend(db,
+	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
 		mockFriend.Notes,
 	)
 	assert.NoError(t, err)
-
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db, FriendsList: mockFriendsList}
-	router.PUT("/friends/:id", mockFriendsHandler.PutFriend)
 
 	updatedFriend := models.Friend{
 		Name:          "Master Chief",
@@ -254,20 +217,17 @@ func TestPutFriend(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	req, _ := http.NewRequest("PUT", "/friends/1", bytes.NewBuffer(jsonValue))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
@@ -283,16 +243,11 @@ func TestPutNotesOnly(t *testing.T) {
 		LastContacted: "06/06/2023",
 		Notes:         "Nice guy",
 	}
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
-	}
 
-	db, err := SetupTestDB()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	err = insertMockFriend(db,
+	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
@@ -300,29 +255,22 @@ func TestPutNotesOnly(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db, FriendsList: mockFriendsList}
-	router.PUT("/friends/:id", mockFriendsHandler.PutFriend)
-
 	updatedFriend := models.Friend{
 		Notes: "Bro is Chuck Norris",
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	req, _ := http.NewRequest("PUT", "/friends/1", bytes.NewBuffer(jsonValue))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, mockFriend.Name, friend.Name)
 	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
@@ -338,16 +286,11 @@ func TestPutNameOnly(t *testing.T) {
 		LastContacted: "06/06/2023",
 		Notes:         "Nice guy",
 	}
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
-	}
 
-	db, err := SetupTestDB()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	err = insertMockFriend(db,
+	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
@@ -355,29 +298,22 @@ func TestPutNameOnly(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db, FriendsList: mockFriendsList}
-	router.PUT("/friends/:id", mockFriendsHandler.PutFriend)
-
 	updatedFriend := models.Friend{
 		Name: "Winnie the Pooh",
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	req, _ := http.NewRequest("PUT", "/friends/1", bytes.NewBuffer(jsonValue))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
@@ -385,25 +321,20 @@ func TestPutNameOnly(t *testing.T) {
 }
 
 // Tests PUT /friends/:id
-// Tests the endpoint when only Name field is provided
+// Tests the endpoint when only Last Contacted field is provided
 func TestPutLastContactedOnly(t *testing.T) {
+	todaysDate := time.Now().Format("02/01/2006")
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
 		LastContacted: "06/06/2023",
 		Notes:         "Nice guy",
 	}
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
-	}
-	todaysDate := time.Now().Format("02/01/2006")
 
-	db, err := SetupTestDB()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
-	defer db.Close()
 
-	err = insertMockFriend(db,
+	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
@@ -411,29 +342,22 @@ func TestPutLastContactedOnly(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	router := gin.New()
-	mockFriendsHandler := &handler.FriendsHandler{DB: db, FriendsList: mockFriendsList}
-	router.PUT("/friends/:id", mockFriendsHandler.PutFriend)
-
 	updatedFriend := models.Friend{
 		LastContacted: todaysDate,
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	req, _ := http.NewRequest("PUT", "/friends/1", bytes.NewBuffer(jsonValue))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var resp map[string]string
-	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, mockFriend.Name, friend.Name)
 	assert.Equal(t, todaysDate, friend.LastContacted)

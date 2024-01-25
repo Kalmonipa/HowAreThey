@@ -112,9 +112,13 @@ func main() {
 
 	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", schedule)
 
-	c.AddFunc(schedule, func() {
+	err = c.AddFunc(schedule, func() {
 		GetRandomFriendScheduled()
 	})
+	if err != nil {
+		logger.LogMessage(logger.LogLevelFatal, "error: %v", err)
+		panic(err)
+	}
 
 	// Start the cron scheduler
 	c.Start()
