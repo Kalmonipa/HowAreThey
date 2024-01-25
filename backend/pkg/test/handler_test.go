@@ -116,6 +116,7 @@ func TestMissingFriendIDRoute(t *testing.T) {
 func TestGetRandomFriend(t *testing.T) {
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	response := performRequest(mockRouter, "GET", "/friends/random", nil)
 
@@ -148,6 +149,7 @@ func TestAddFriendRoute(t *testing.T) {
 	jsonValue, _ := json.Marshal(newFriend)
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	response := performRequest(mockRouter, "POST", "/friends", jsonValue)
 
@@ -168,6 +170,7 @@ func TestAddFriendRoute(t *testing.T) {
 func TestDeleteFriendRoute(t *testing.T) {
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "Nice guy")
 	assert.NoError(t, err)
@@ -197,6 +200,7 @@ func TestPutFriend(t *testing.T) {
 	}
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
@@ -241,6 +245,7 @@ func TestPutNotesOnly(t *testing.T) {
 	}
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
@@ -283,6 +288,7 @@ func TestPutNameOnly(t *testing.T) {
 	}
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
@@ -326,6 +332,7 @@ func TestPutLastContactedOnly(t *testing.T) {
 	}
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
 		mockFriend.ID,
