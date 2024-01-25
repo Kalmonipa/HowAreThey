@@ -20,11 +20,14 @@ const (
 var minLogLevel = LogLevelInfo
 
 func SetupLogger() {
-	// Custom logger setup
 	log.SetOutput(os.Stdout)
 	log.SetFlags(0)
 
-	// Read log level from environment variable
+	if os.Getenv("TEST_ENV") == "true" {
+		minLogLevel = LogLevelFatal
+		return
+	}
+
 	envLogLevel := os.Getenv("LOG_LEVEL")
 
 	// Map string values to log level constants
@@ -53,7 +56,6 @@ func LogMessage(level int, format string, args ...interface{}) {
 		return
 	}
 
-	// Convert log level to string
 	levelStr := ""
 	switch level {
 	case LogLevelDebug:
