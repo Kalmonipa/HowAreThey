@@ -4,11 +4,12 @@ services:
   howarethey:
     container_name: howarethey
     image: kalmonipa/howarethey
+    restart: always
     environment:
         # Discord Webhook to send notifications too. Read the discord webhook docs to get one
       - DISCORD_WEBHOOK=https://discord.com/api/webhooks/myexamplewebhook
         # Picks a friend at 7am every Monday
-      - CRON="0 7 * * MON"
+      - CRON=0 0 7 * * 1
     ports:
       # The Web UI (enabled by --api.insecure=true)
       - "8022:8080"
