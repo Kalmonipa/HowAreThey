@@ -29,4 +29,4 @@ jobs:
           version: v1.54
 
           # Optional: working directory, useful for monorepos
-          working-directory: backend
+          # working-directory: backend
