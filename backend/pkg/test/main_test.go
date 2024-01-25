@@ -10,14 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// setupTestDB creates and returns a new database for testing
 func SetupTestDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the friends table
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS friends (
 		id INTEGER PRIMARY KEY,
 		name TEXT NOT NULL,
@@ -135,7 +133,6 @@ func TestAddFriend(t *testing.T) {
 }
 
 func TestDeleteFriend(t *testing.T) {
-
 	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
@@ -155,7 +152,6 @@ func TestDeleteFriend(t *testing.T) {
 }
 
 func TestSqlUpdateFriend(t *testing.T) {
-
 	db, err := SetupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
@@ -180,7 +176,6 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.Equal(t, updatedFriend.Notes, friend.Notes)
 }
 
-// containsFriend checks if the given friend is in the friends list.
 func containsFriend(friends models.FriendsList, friend models.Friend) bool {
 	for _, f := range friends {
 		if reflect.DeepEqual(f, friend) {
@@ -190,7 +185,6 @@ func containsFriend(friends models.FriendsList, friend models.Friend) bool {
 	return false
 }
 
-// insertMockFriend inserts a mock friend into the test database.
 func insertMockFriend(db *sql.DB, id string, name string, lastContacted string, notes string) error {
 	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted, notes) VALUES (?, ?, ?, ?)")
 	if err != nil {
