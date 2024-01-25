@@ -3,8 +3,8 @@ A reminder system to keep in touch with your friends
 
 
 ### Docker Config
-| Environment Variable | Details | Example | Default|
-|---|---|---|
+| Environment Variable | Details | Example | Default |
+|---|---|---|---|
 | DISCORD_WEBHOOK | Provide a Discord webhook to send notifications to Discord. Not providing a webhook will only log the events, it won't send the notification anywhere | `https://discord.com/api/webhooks/myexamplewebhook` | N/A |
 | CRON | [Cron expression](https://crontab.guru/) to define how often a friend will get picked. By default, runs weekly. Use integer format for each field. | `0 0 7 * * 1` | `@weekly` |
 
