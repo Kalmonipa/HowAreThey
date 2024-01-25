@@ -32,10 +32,9 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	// TODO: Figure out if .Default() is what I need or something else
 	r := gin.Default()
 
-	// Configure CORS
+	// Allow CORS for the frontend to access
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
-	// You can also add more settings here, like config.AllowMethods, config.AllowHeaders, etc.
 
 	r.Use(cors.New(config))
 
@@ -51,7 +50,7 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	return r
 }
 
-// DELETE /friends/{ID}
+// DELETE /friends/:id
 func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	friendID := c.Param("id")
 
@@ -112,7 +111,7 @@ func (h *FriendsHandler) GetFriendCount(c *gin.Context) {
 	c.JSON(http.StatusOK, models.GetFriendCount(h.FriendsList))
 }
 
-// GET /friends/id/{ID}
+// GET /friends/id/:id
 func (h *FriendsHandler) GetFriendByID(c *gin.Context) {
 	friendID := c.Param("id")
 	friend, err := models.GetFriendByID(friendID, h.FriendsList)
@@ -123,7 +122,7 @@ func (h *FriendsHandler) GetFriendByID(c *gin.Context) {
 	c.JSON(http.StatusOK, friend)
 }
 
-// GET /friends/name/{NAME}
+// GET /friends/name/:name
 func (h *FriendsHandler) GetFriendByName(c *gin.Context) {
 	friendName := c.Param("name")
 	friend, err := models.GetFriendByName(friendName, h.FriendsList)
@@ -160,9 +159,15 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
 }
 
-// PUT /friends/{ID}
+// PUT /friends/:id
 func (h *FriendsHandler) PutFriend(c *gin.Context) {
 	id := c.Param("id")
+
+	currentFriend, err := models.GetFriendByID(id, h.FriendsList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Friend not found"})
+		return
+	}
 
 	var updatedFriend models.Friend
 	if err := c.ShouldBindJSON(&updatedFriend); err != nil {
@@ -170,19 +175,31 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		return
 	}
 
-	if err := models.SqlUpdateFriend(h.DB, id, updatedFriend); err != nil {
+	if updatedFriend.Name != "" {
+		logger.LogMessage(logger.LogLevelDebug, "Setting name to "+updatedFriend.Name)
+		currentFriend.Name = updatedFriend.Name
+	}
+	if updatedFriend.LastContacted != "" {
+		logger.LogMessage(logger.LogLevelDebug, "Setting last contacted to "+updatedFriend.LastContacted)
+		currentFriend.LastContacted = updatedFriend.LastContacted
+	}
+	if updatedFriend.Notes != "" {
+		logger.LogMessage(logger.LogLevelDebug, "Setting notes to "+updatedFriend.Notes)
+		currentFriend.Notes = updatedFriend.Notes
+	}
+
+	if err := models.SqlUpdateFriend(h.DB, id, currentFriend); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	friendsList, err := models.BuildFriendsList(h.DB)
+	h.FriendsList, err = models.BuildFriendsList(h.DB)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	h.FriendsList = friendsList
 
-	successMsg := updatedFriend.ID + " updated successfully"
+	successMsg := id + " updated successfully"
 
 	c.JSON(http.StatusOK, gin.H{"message": successMsg})
 }

@@ -199,20 +199,20 @@ func SendNotification(friend Friend, url string) {
 	defer resp.Body.Close()
 }
 
-func UpdateFriend(friendList FriendsList, newFriend Friend) (FriendsList, error) {
+func UpdateFriend(friendList FriendsList, newFriend *Friend) (FriendsList, error) {
 	for i, friend := range friendList {
 		logger.LogMessage(logger.LogLevelDebug, "Checking %s", friend.Name)
 		if friend.ID == newFriend.ID {
-			friendList[i] = newFriend
+			friendList[i] = *newFriend
 		}
 	}
 	return friendList, nil
 }
 
-func UpdateLastContacted(friend Friend, todaysDate time.Time) Friend {
+func UpdateLastContacted(friend Friend, todaysDate time.Time) *Friend {
 	friend.LastContacted = todaysDate.Format("02/01/2006")
 
-	return friend
+	return &friend
 }
 
 // SQL Functions
@@ -237,7 +237,7 @@ func AddFriend(db *sql.DB, newFriend Friend) error {
 }
 
 // Updates a friend with new details
-func SqlUpdateFriend(db *sql.DB, id string, updatedFriend Friend) error {
+func SqlUpdateFriend(db *sql.DB, id string, updatedFriend *Friend) error {
 	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? , notes = ? WHERE id = ?")
 	if err != nil {
 		return err
