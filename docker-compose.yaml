@@ -2,7 +2,7 @@ version: '3'
 
 services:
   howarethey:
-    container_name: howarethey
+    container_name: howarethey-backend
     image: kalmonipa/howarethey
     restart: always
     environment:
