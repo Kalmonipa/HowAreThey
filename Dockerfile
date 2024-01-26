@@ -18,8 +18,8 @@ WORKDIR /root/
 
 # Install Node.js and other dependencies
 RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
-    nodejs=12.22.9~dfsg-1ubuntu3 \
-    npm=8.5.1~ds-1 \
+    nodejs=12.22.12~dfsg-1~deb11u4 \
+    npm=7.5.2+ds-2 \
     libsqlite3-0=3.34.1-3 \
     ca-certificates=20210119 \
     && rm -rf /var/lib/apt/lists/*
@@ -36,4 +36,4 @@ COPY sql/ ./sql
 EXPOSE 3000 8080
 
 # Run both applications
-CMD ["sh", "-c", "./howarethey & cd /usr/src/app && npm run build"]
+CMD ["sh", "-c", "./howarethey & cd /usr/src/app && npm run start"]
