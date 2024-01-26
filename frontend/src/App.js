@@ -4,7 +4,7 @@ function FriendsList() {
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8080/friends')
+    fetch('http://localhost:8022/friends')
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
