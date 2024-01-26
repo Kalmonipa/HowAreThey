@@ -16,8 +16,6 @@ RUN npm install && npm run build
 FROM debian:bullseye-slim
 WORKDIR /root/
 
-RUN apt-cache madison serve
-
 # Install Node.js and other dependencies
 RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
     nodejs=12.22.12~dfsg-1~deb11u4 \
