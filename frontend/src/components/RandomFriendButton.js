@@ -1,14 +1,12 @@
 import React from 'react';
+import '../css/RandomFriendButton.css'
 
-function RandomFriendButton() {
-    function handleClick() {
-        alert('You clicked me!');
-    }
+function RandomFriendButton({ onRandomFriendSelect }) {
     return (
-      <button onClick={handleClick}>
-        Pick a friend to contact
-      </button>
+        <button onClick={onRandomFriendSelect} className='random-friend-button'>
+            Pick a friend to contact
+        </button>
     );
-  }
+}
 
 export default RandomFriendButton;
