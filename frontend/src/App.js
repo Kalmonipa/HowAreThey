@@ -11,13 +11,29 @@ import './css/App.css';
 function FilterableFriendsTable({ friends }) {
   const [filterText, setFilterText] = useState('');
 
+  const handleRandomFriend = () => {
+    fetch('http://localhost:8080/friends/random')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+      })
+      .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  };
+
   return (
     <div className='body'>
       <PageHeader />
-      <SearchBar
-        filterText={filterText}
-        onFilterTextChange={setFilterText}
-      />
+      <div className="search-and-button">
+        <SearchBar
+          filterText={filterText}
+          onFilterTextChange={setFilterText}
+        />
+        <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
+      </div>
       <FriendTable
         friends={friends}
         filterText={filterText}
@@ -43,23 +59,9 @@ export default function App() {
       });
   }, []);
 
-  const handleRandomFriend = () => {
-    fetch('http://localhost:8080/friends/random')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok ' + response.statusText);
-        }
-        return response.json();
-      })
-      .catch(error => {
-        console.error('There has been a problem with your fetch operation:', error);
-      });
-  };
-
   return (
     <div>
       <FilterableFriendsTable friends={friends} />
-      <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
     </div>
   );
 }

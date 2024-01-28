@@ -1,11 +1,11 @@
 .friend-table {
-  background-color: #B1CC74; /* Lighter green shade */
-  width: calc(100% - 40px); /* Adjust width to account for margin */
-  border-collapse: separate; /* Use 'separate' to allow border-radius */
-  border-spacing: 0; /* Remove the default spacing */
-  border-radius: 20px; /* Rounded corners for the table */
-  overflow: hidden; /* Ensures the inner elements don't overflow the rounded corners */
-  margin: 20px; /* If you want to add some space below the table */
+  background-color: #B1CC74;
+  width: calc(100% - 40px);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 20px;
   margin-top: 0px;
 }
 
@@ -17,11 +17,10 @@
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;
-  background-color: #034C3C; /* Darker green for the header */
+  background-color: #034C3C;
   color: white;
 }
 
-/* Round the top left and top right corners of the header */
 .friend-table thead tr:first-child th:first-child {
   border-top-left-radius: 20px;
 }
@@ -30,7 +29,6 @@
   border-top-right-radius: 20px;
 }
 
-/* If you have a static number of rows or can determine the last row in some way */
 .friend-table tbody tr:last-child td:first-child {
   border-bottom-left-radius: 20px;
 }
