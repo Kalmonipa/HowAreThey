@@ -1,35 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import RandomFriendButton from './components/RandomFriendButton';
+import SearchBar from './components/SearchBar';
+import PageHeader from './components/PageHeader';
+import FriendTable from './components/FriendTable';
 
-function FriendsList() {
-  const friends = [
-    {"ID":"1","Name":"Jack Reacher","LastContacted":"01/01/2020","Notes":""},
-    {"ID":"2","Name":"John Wick","LastContacted":"25/01/2024","Notes":""},
-    {"ID":"3","Name":"Sonic The Hedgehog","LastContacted":"01/01/2020","Notes":""},
-    {"ID":"4","Name":"Hairy Maclairy","LastContacted":"01/01/2020","Notes":""},
-    {"ID":"5","Name":"Post Malone","LastContacted":"01/01/2020","Notes":""},
-    {"ID":"6","Name":"Avatar Aang","LastContacted":"25/01/2024","Notes":""},
-  ];
+import './css/FriendTable.css';
+import './css/App.css';
+
+
+function FilterableFriendsTable({ friends }) {
+  const [filterText, setFilterText] = useState('');
 
   return (
-    <div>
-      <h1>Friends List</h1>
-      <ul>
-        {friends.length > 0 ? (
-          friends.map(friend => (
-            <li key={friend.ID}>
-              <strong>Name:</strong> {friend.Name} |
-              <strong> Last Contacted:</strong> {friend.LastContacted}
-              {friend.Notes && <><strong> Notes:</strong> {friend.Notes}</>}
-            </li>
-          ))
-        ) : (
-          <p>No friends found.</p>
-        )}
-      </ul>
-      <RandomFriendButton />
+    <div className='body'>
+      <PageHeader />
+      <SearchBar
+        filterText={filterText}
+        onFilterTextChange={setFilterText}
+      />
+      <FriendTable
+        friends={friends}
+        filterText={filterText}
+      />
     </div>
   );
 }
 
-export default FriendsList;
+export default function App() {
+  const [friends, setFriends] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:8080/friends')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setFriends(data))
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  }, []);
+
+  const handleRandomFriend = () => {
+    fetch('http://localhost:8080/friends/random')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+      })
+      .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  };
+
+  return (
+    <div>
+      <FilterableFriendsTable friends={friends} />
+      <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
+    </div>
+  );
+}

@@ -1,0 +1,15 @@
+.search-bar {
+    padding: 10px; /* Padding inside the input field */
+    margin: 5px; /* Space around the component */
+    border-radius: 20px; /* Rounded corners */
+    border: 1px solid #ccc; /* A light border, can be adjusted */
+    width: calc(25%); /* Adjust width to account for margin */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    justify-content: left;
+  }
+
+  .search-bar-form {
+    /* display: flex; /* Use flex to center the input field */
+    /* justify-content: center; /* Center horizontally */
+    padding: 20px; /* Additional padding around the form if needed */
+  }
