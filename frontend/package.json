@@ -44,5 +44,5 @@
     "ghooks": {
       "pre-commit": "jest"
     }
-  },
+  }
 }
