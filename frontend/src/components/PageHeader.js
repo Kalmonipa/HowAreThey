@@ -1,11 +1,13 @@
-import '../css/PageHeader.css'
+import React from 'react';
+
+import '../css/PageHeader.css';
 
 function PageHeader() {
-    return (
-      <div className="page-header">
-        <h1>How Are They?</h1>
-      </div>
-    )
-  }
+  return (
+    <div className="page-header">
+      <h1>How Are They?</h1>
+    </div>
+  );
+}
 
 export default PageHeader;

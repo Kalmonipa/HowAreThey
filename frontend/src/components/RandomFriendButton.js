@@ -1,17 +1,18 @@
-import React from "react";
-import "../css/RandomFriendButton.css";
+import React from 'react';
+import PropTypes from 'prop-types';
 
-/**
- * Creates a button that can be used to select a friend from the list
- * @param {onRandomFriendSelect} onRandomFriendSelect
- * @returns
- */
-function RandomFriendButton({ onRandomFriendSelect }) {
+import '../css/RandomFriendButton.css';
+
+function RandomFriendButton({onRandomFriendSelect}) {
   return (
     <button onClick={onRandomFriendSelect} className="random-friend-button">
       Pick a friend to contact
     </button>
   );
 }
+
+RandomFriendButton.propTypes = {
+  onRandomFriendSelect: PropTypes.func.isRequired,
+};
 
 export default RandomFriendButton;
