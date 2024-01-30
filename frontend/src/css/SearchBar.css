@@ -11,13 +11,3 @@
 .search-bar-form {
   padding: 20px; /* Additional padding around the form if needed */
 }
-
-.search-and-button {
-  display: flex;        /* Establishes a flex container */
-  align-items: center;  /* Aligns children vertically in the center */
-  justify-content: space-between; /* Puts maximum space between children */
-}
-
-.search-and-button > button {
-  margin-left: 10px; /* Adjust the space between the search bar and button as needed */
-}

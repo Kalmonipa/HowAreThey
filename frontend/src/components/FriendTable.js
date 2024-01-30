@@ -2,36 +2,31 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import '../css/FriendTable.css';
+import '../css/EditBoxes.css';
 
-function FriendTable({friends, filterText}) {
-  const rows = [];
+function FriendTable({ friends, filterText, isEditable }) {
 
-  friends.forEach((friend) => {
-    if (
-      friend.Name.toLowerCase().indexOf(
-          filterText.toLowerCase(),
-      ) === -1
-    ) {
-      return;
+  const rows = friends.map((friend) => {
+    if (friend.Name.toLowerCase().includes(filterText.toLowerCase())) {
+      return <FriendRow friend={friend} key={friend.ID} editable={isEditable} />;
     }
-    rows.push(
-        <FriendRow
-          friend={friend}
-          key={friend.name} />,
-    );
+    return null;
   });
 
   return (
-    <table className="friend-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Last Contacted</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
+    <div>
+      <table className="friend-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Last Contacted</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
       <tbody>{rows}</tbody>
-    </table>
+      </table>
+    </div>
   );
 }
 
@@ -40,17 +35,27 @@ FriendTable.propTypes = {
   filterText: PropTypes.string.isRequired,
 };
 
-function FriendRow({friend}) {
-  const name = friend.Name;
+function FriendRow({ friend, editable }) {
+  const renderCell = (content, isEditable) => {
+    return isEditable ? (
+      <td>
+        <input type="text" defaultValue={content} className="editable-input" />
+      </td>
+    ) : (
+      <td>{content}</td>
+    );
+  };
 
   return (
     <tr>
-      <td>{name}</td>
-      <td>{friend.LastContacted}</td>
-      <td>{friend.Notes}</td>
+      {renderCell(friend.ID, false)}
+      {renderCell(friend.Name, editable)}
+      {renderCell(friend.LastContacted, editable)}
+      {renderCell(friend.Notes, editable)}
     </tr>
   );
 }
+
 
 FriendRow.propTypes = {
   friend: PropTypes.shape({
