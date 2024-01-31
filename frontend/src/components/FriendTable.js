@@ -6,12 +6,23 @@ import '../css/EditBoxes.css';
 
 function FriendTable({ friends, filterText }) {
   const [editableRowId, setEditableRowId] = useState(null);
+  const [friendsData, setFriendsData] = useState(friends);
 
-  const exitEditMode = () => {
-    setEditableRowId(null); // Reset editable row state
+  const fetchFriendsData = async () => {
+    const response = await fetch('http://localhost:8080/friends');
+    const data = await response.json();
+    setFriendsData(data);
   };
 
-  const rows = friends.map((friend) => {
+  useEffect(() => {
+    fetchFriendsData();
+  }, []);
+
+  const exitEditMode = () => {
+    setEditableRowId(null);
+  };
+
+  const rows = friendsData.map((friend) => {
     if (friend.Name.toLowerCase().includes(filterText.toLowerCase())) {
       return (
         <FriendRow
@@ -20,6 +31,7 @@ function FriendTable({ friends, filterText }) {
           editable={friend.ID === editableRowId}
           onRowClick={() => setEditableRowId(friend.ID)}
           onExitEditMode={exitEditMode}
+          fetchFriendsData={fetchFriendsData}
         />
       );
     }
@@ -48,18 +60,25 @@ FriendTable.propTypes = {
   filterText: PropTypes.string.isRequired,
 };
 
-function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
-  const handleKeyPress = (event) => {
+function FriendRow({ friend, editable, onRowClick, onExitEditMode, fetchFriendsData }) {
+  const [updatedFriend, setUpdatedFriend] = useState({ ...friend });
+
+  const handleInputChange = (field, value) => {
+    setUpdatedFriend(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleKeyPress = async (event) => {
     if (event.key === 'Enter') {
+      await handleSave();
       onExitEditMode();
     }
   };
 
-  const handleClickOutside = (event) => {
+  const handleClickOutside = async (event) => {
     if (event.target.closest('.friend-table-row') !== null) {
-      // If the click is inside the row, do nothing
       return;
     }
+    await handleSave();
     onExitEditMode();
   };
 
@@ -74,14 +93,37 @@ function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
     };
   }, [editable, onExitEditMode]);
 
-  const renderCell = (content, isEditable) => {
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/friends/${friend.ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedFriend),
+      });
+      if (response.ok) {
+        await fetchFriendsData();
+      }
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      // Optionally, update the friends list in the parent component here
+      onExitEditMode();
+    } catch (error) {
+      console.error('Failed to update friend:', error);
+    }
+  };
+
+  const renderCell = (content, field, isEditable) => {
     return isEditable ? (
       <td>
         <input
           type="text"
-          defaultValue={content}
+          value={updatedFriend[field]}
           className="editable-input"
-          onKeyPress={handleKeyPress}
+          onChange={(e) => handleInputChange(field, e.target.value)}
+          onKeyDown={handleKeyPress}
         />
       </td>
     ) : (
@@ -91,10 +133,10 @@ function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
 
   return (
     <tr className="friend-table-row" onClick={onRowClick}>
-      {renderCell(friend.ID, false)}
-      {renderCell(friend.Name, editable)}
-      {renderCell(friend.LastContacted, editable)}
-      {renderCell(friend.Notes, editable)}
+      {renderCell(friend.ID, 'ID', false)}
+      {renderCell(friend.Name, 'Name', editable)}
+      {renderCell(friend.LastContacted, 'LastContacted', editable)}
+      {renderCell(friend.Notes, 'Notes', editable)}
     </tr>
   );
 }

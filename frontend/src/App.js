@@ -45,8 +45,8 @@ function FilterableFriendsTable({friends}) {
           onFilterTextChange={setFilterText}
         />
         <div className="button-group">
-          <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
           <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
+          <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
         </div>
       </div>
       <FriendTable
