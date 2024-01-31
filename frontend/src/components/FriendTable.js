@@ -1,14 +1,27 @@
-import React from 'react';
+import React, {useState} from 'react';
 import PropTypes from 'prop-types';
 
 import '../css/FriendTable.css';
 import '../css/EditBoxes.css';
 
-function FriendTable({ friends, filterText, isEditable }) {
+function FriendTable({ friends, filterText }) {
+  const [editableRowId, setEditableRowId] = useState(null);
+
+  const exitEditMode = () => {
+    setEditableRowId(null); // Reset editable row state
+  };
 
   const rows = friends.map((friend) => {
     if (friend.Name.toLowerCase().includes(filterText.toLowerCase())) {
-      return <FriendRow friend={friend} key={friend.ID} editable={isEditable} />;
+      return (
+        <FriendRow
+          friend={friend}
+          key={friend.ID}
+          editable={friend.ID === editableRowId}
+          onRowClick={() => setEditableRowId(friend.ID)}
+          onExitEditMode={exitEditMode}
+        />
+      );
     }
     return null;
   });
@@ -35,11 +48,22 @@ FriendTable.propTypes = {
   filterText: PropTypes.string.isRequired,
 };
 
-function FriendRow({ friend, editable }) {
+function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      onExitEditMode();
+    }
+  };
+
   const renderCell = (content, isEditable) => {
     return isEditable ? (
       <td>
-        <input type="text" defaultValue={content} className="editable-input" />
+        <input
+          type="text"
+          defaultValue={content}
+          className="editable-input"
+          onKeyPress={handleKeyPress}
+        />
       </td>
     ) : (
       <td>{content}</td>
@@ -47,7 +71,7 @@ function FriendRow({ friend, editable }) {
   };
 
   return (
-    <tr>
+    <tr onClick={onRowClick}>
       {renderCell(friend.ID, false)}
       {renderCell(friend.Name, editable)}
       {renderCell(friend.LastContacted, editable)}
@@ -63,6 +87,7 @@ FriendRow.propTypes = {
     LastContacted: PropTypes.string,
     Notes: PropTypes.string,
   }).isRequired,
+  onExitEditMode: PropTypes.func.isRequired,
 };
 
 export default FriendTable;
