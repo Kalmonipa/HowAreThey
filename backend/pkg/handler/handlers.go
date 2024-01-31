@@ -2,8 +2,10 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -48,6 +50,16 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	r.PUT("/friends/:id", handler.PutFriend)
 
 	return r
+}
+
+func isValidDate(dateStr string) bool {
+	match, _ := regexp.MatchString(`^\d{2}/\d{2}/\d{4}$`, dateStr)
+	if !match {
+		return false
+	}
+
+	_, err := time.Parse("02/01/2006", dateStr)
+	return err == nil
 }
 
 // DELETE /friends/:id
@@ -181,7 +193,13 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		logger.LogMessage(logger.LogLevelDebug, "Setting name to "+updatedFriend.Name)
 		currentFriend.Name = updatedFriend.Name
 	}
-	if updatedFriend.LastContacted != "" {
+	updatedLastContacted := updatedFriend.LastContacted
+	if updatedLastContacted != "" {
+		if !isValidDate(updatedLastContacted) {
+			err = errors.New("Date must be in DD/MM/YYYY format." + updatedLastContacted + "does not match.")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		logger.LogMessage(logger.LogLevelDebug, "Setting last contacted to "+updatedFriend.LastContacted)
 		currentFriend.LastContacted = updatedFriend.LastContacted
 	}
