@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 
 import '../css/FriendTable.css';
@@ -55,6 +55,25 @@ function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
     }
   };
 
+  const handleClickOutside = (event) => {
+    if (event.target.closest('.friend-table-row') !== null) {
+      // If the click is inside the row, do nothing
+      return;
+    }
+    onExitEditMode();
+  };
+
+  useEffect(() => {
+    if (editable) {
+      // Add event listener when the row is editable
+      document.addEventListener('click', handleClickOutside);
+    }
+    return () => {
+      // Clean up the event listener when the component unmounts or becomes non-editable
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [editable, onExitEditMode]);
+
   const renderCell = (content, isEditable) => {
     return isEditable ? (
       <td>
@@ -71,7 +90,7 @@ function FriendRow({ friend, editable, onRowClick, onExitEditMode }) {
   };
 
   return (
-    <tr onClick={onRowClick}>
+    <tr className="friend-table-row" onClick={onRowClick}>
       {renderCell(friend.ID, false)}
       {renderCell(friend.Name, editable)}
       {renderCell(friend.LastContacted, editable)}

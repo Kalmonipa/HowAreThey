@@ -1,10 +1,10 @@
 import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 
-import EditButton from './components/EditButton';
 import FriendTable from './components/FriendTable';
 import PageHeader from './components/PageHeader';
 import SearchBar from './components/SearchBar';
+import SettingsButton from './components/SettingsButton';
 import RandomFriendButton from './components/RandomFriendButton';
 
 
@@ -45,7 +45,7 @@ function FilterableFriendsTable({friends}) {
           onFilterTextChange={setFilterText}
         />
         <div className="button-group">
-          <EditButton isEditable={isEditable} onClick={toggleEdit} />
+          <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
           <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
         </div>
       </div>
