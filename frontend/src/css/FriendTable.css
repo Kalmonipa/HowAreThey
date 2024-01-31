@@ -21,6 +21,10 @@
   color: white;
 }
 
+.friend-table tr:hover {
+  cursor: pointer;
+}
+
 .friend-table thead tr:first-child th:first-child {
   border-top-left-radius: 20px;
 }

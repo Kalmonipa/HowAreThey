@@ -1,18 +1,25 @@
 import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 
-import RandomFriendButton from './components/RandomFriendButton';
-import SearchBar from './components/SearchBar';
-import PageHeader from './components/PageHeader';
 import FriendTable from './components/FriendTable';
+import PageHeader from './components/PageHeader';
+import SearchBar from './components/SearchBar';
+import SettingsButton from './components/SettingsButton';
+import RandomFriendButton from './components/RandomFriendButton';
 
 
+import './css/ActivityBar.css'
 import './css/FriendTable.css';
 import './css/App.css';
 
 
 function FilterableFriendsTable({friends}) {
   const [filterText, setFilterText] = useState('');
+  const [isEditable, setIsEditable] = useState(false);
+
+  const toggleEdit = () => {
+    setIsEditable(!isEditable);
+  };
 
   const handleRandomFriend = () => {
     fetch('http://localhost:8080/friends/random')
@@ -32,16 +39,20 @@ function FilterableFriendsTable({friends}) {
   return (
     <div className='body'>
       <PageHeader />
-      <div className="search-and-button">
+      <div className="activities-bar">
         <SearchBar
           filterText={filterText}
           onFilterTextChange={setFilterText}
         />
-        <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
+        <div className="button-group">
+          <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
+          <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
+        </div>
       </div>
       <FriendTable
         friends={friends}
         filterText={filterText}
+        isEditable={isEditable}
       />
     </div>
   );
