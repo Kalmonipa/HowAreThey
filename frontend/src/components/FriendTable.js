@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
+import Modal from './Modal';
 
 import '../css/FriendTable.css';
 import '../css/EditBoxes.css';
@@ -7,6 +8,8 @@ import '../css/EditBoxes.css';
 function FriendTable({ friends, filterText }) {
   const [editableRowId, setEditableRowId] = useState(null);
   const [friendsData, setFriendsData] = useState(friends);
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState('');
 
   const fetchFriendsData = async () => {
     const response = await fetch('http://localhost:8080/friends');
@@ -32,6 +35,8 @@ function FriendTable({ friends, filterText }) {
           onRowClick={() => setEditableRowId(friend.ID)}
           onExitEditMode={exitEditMode}
           fetchFriendsData={fetchFriendsData}
+          setShowModal={setShowModal}
+          setModalContent={setModalContent}
         />
       );
     }
@@ -40,6 +45,9 @@ function FriendTable({ friends, filterText }) {
 
   return (
     <div>
+    <Modal show={showModal} onClose={() => setShowModal(false)}>
+      <p>{modalContent}</p>
+    </Modal>
       <table className="friend-table">
         <thead>
           <tr>
@@ -60,7 +68,15 @@ FriendTable.propTypes = {
   filterText: PropTypes.string.isRequired,
 };
 
-function FriendRow({ friend, editable, onRowClick, onExitEditMode, fetchFriendsData }) {
+function FriendRow({
+  friend,
+  editable,
+  onRowClick,
+  onExitEditMode,
+  fetchFriendsData,
+  setModalContent,
+  setShowModal,
+ }) {
   const [updatedFriend, setUpdatedFriend] = useState({ ...friend });
 
   const handleInputChange = (field, value) => {
@@ -93,7 +109,23 @@ function FriendRow({ friend, editable, onRowClick, onExitEditMode, fetchFriendsD
     };
   }, [editable, onExitEditMode]);
 
+  const isValidDate = (dateString) => {
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    if (dateString.match(regex) === null) {
+      return false;
+    }
+    const [day, month, year] = dateString.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  };
+
+
   const handleSave = async () => {
+    if (!isValidDate(updatedFriend.LastContacted)) {
+      setModalContent('Invalid date format. Please use DD/MM/YYYY.');
+      setShowModal(true);
+      return;
+    }
     try {
       const response = await fetch(`http://localhost:8080/friends/${friend.ID}`, {
         method: 'PUT',
@@ -149,6 +181,8 @@ FriendRow.propTypes = {
     Notes: PropTypes.string,
   }).isRequired,
   onExitEditMode: PropTypes.func.isRequired,
+  setShowModal: PropTypes.func.isRequired,
+  setModalContent: PropTypes.func.isRequired,
 };
 
 export default FriendTable;
