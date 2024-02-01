@@ -51,7 +51,6 @@ function FriendTable({ friends, filterText }) {
       <table className="friend-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Name</th>
             <th>Last Contacted</th>
             <th>Notes</th>
@@ -165,7 +164,6 @@ function FriendRow({
 
   return (
     <tr className="friend-table-row" onClick={onRowClick}>
-      {renderCell(friend.ID, 'ID', false)}
       {renderCell(friend.Name, 'Name', editable)}
       {renderCell(friend.LastContacted, 'LastContacted', editable)}
       {renderCell(friend.Notes, 'Notes', editable)}
