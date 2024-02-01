@@ -1,21 +1,19 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import PropTypes from 'prop-types';
 
 import AddFriendButton from './components/AddFriendButton';
-import AddFriendModal from './components/AddFriendModal';
 import FriendTable from './components/FriendTable';
 import PageHeader from './components/PageHeader';
 import SearchBar from './components/SearchBar';
 import SettingsButton from './components/SettingsButton';
 import RandomFriendButton from './components/RandomFriendButton';
 
-
 import './css/ActivityBar.css'
 import './css/FriendTable.css';
 import './css/App.css';
 
 
-function FilterableFriendsTable({friends, onAddFriendClick}) {
+function FilterableFriendsTable({friends, setFriends}) {
   const [filterText, setFilterText] = useState('');
   const [isEditable, setIsEditable] = useState(false);
 
@@ -23,6 +21,19 @@ function FilterableFriendsTable({friends, onAddFriendClick}) {
   const toggleEdit = () => {
     setIsEditable(!isEditable);
   };
+
+  // Inside your FilterableFriendsTable component
+  const fetchFriends = useCallback(() => {
+    fetch('http://localhost:8080/friends')
+      .then(response => response.json())
+      .then(data => setFriends(data))
+      .catch(error => console.error('Error fetching data:', error));
+  }, []);
+
+  // Then, in your useEffect:
+  useEffect(() => {
+    fetchFriends();
+  }, [fetchFriends]);
 
   const handleRandomFriend = () => {
     fetch('http://localhost:8080/friends/random')
@@ -48,7 +59,7 @@ function FilterableFriendsTable({friends, onAddFriendClick}) {
           onFilterTextChange={setFilterText}
         />
         <div className="button-group">
-          <AddFriendButton addFriendSelect={onAddFriendClick} />
+          <AddFriendButton fetchFriends={fetchFriends} />
           <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
           <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
         </div>
@@ -63,32 +74,10 @@ function FilterableFriendsTable({friends, onAddFriendClick}) {
 }
 FilterableFriendsTable.propTypes = {
   friends: PropTypes.array.isRequired,
-  onAddFriendClick: PropTypes.func.isRequired,
 };
 
 export default function App() {
   const [friends, setFriends] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-
-  const handleAddFriendClick = () => {
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const fetchFriends = () => {
-    fetch('http://localhost:8080/friends')
-      .then(response => response.json())
-      .then(data => setFriends(data))
-      .catch(error => console.error('Error fetching data:', error));
-  };
-
-  const handleSave = () => {
-    fetchFriends();
-    setShowModal(false);
-  };
 
   useEffect(() => {
     fetch('http://localhost:8080/friends')
@@ -106,15 +95,8 @@ export default function App() {
 
   return (
     <div>
-      <FilterableFriendsTable
-      friends={friends}
-      onAddFriendClick={handleAddFriendClick}
-      />
-      <AddFriendModal
-        show={showModal}
-        onClose={handleCloseModal}
-        onSaved={handleSave}>
-      </AddFriendModal>
+      <FilterableFriendsTable friends={friends} setFriends={setFriends} />
     </div>
   );
+
 }
