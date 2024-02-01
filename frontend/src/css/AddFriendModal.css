@@ -11,10 +11,35 @@
 }
 
 .add-friend-modal {
-    background-color: #ea8e0e;
+    background-color: #C7F2A7;
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.name-input, .date-input {
+    border-radius: 20px;
+    padding: 5px;
+    margin-right: 10px;
+}
+
+.notes-input {
+    border-radius: 20px;
+    padding: 5px;
+    margin-right: 10px;
+    width: 100%;
+}
+
+.add-friend-modal .input-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.add-friend-modal .button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
 }
 
 .close-button:hover {

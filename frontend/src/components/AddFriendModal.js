@@ -47,30 +47,36 @@ if (!show) {
 }
 
 return (
-    <div className="add-friend-modal-backdrop">
+  <div className="add-friend-modal-backdrop">
     <div className="add-friend-modal">
-    <input
-        type="text"
-        placeholder="Name"
-        value={name}
-        onChange={e => setName(e.target.value)}
+      <h3>Add a new friend</h3>
+      <div className="input-row">
+        <input className='name-input'
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
         />
-        <DatePicker
-        selected={selectedDate}
-        onChange={date => setSelectedDate(date)}
-        dateFormat="dd/MM/yyyy"
-        placeholderText="Select a date"
+        <DatePicker className='date-input'
+          selected={selectedDate}
+          onChange={date => setSelectedDate(date)}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="Select a date"
         />
-        <textarea
+      </div>
+      <textarea className='notes-input'
         placeholder="Notes"
         value={notes}
         onChange={e => setNotes(e.target.value)}
-        />
+      />
+      <div className="button-row">
         <button onClick={handleSave}>Save</button>
         <button onClick={onClose}>Close</button>
+      </div>
     </div>
-    </div>
-  );
+  </div>
+);
+
 };
   AddFriendModal.propTypes = {
   show: PropTypes.bool.isRequired,
