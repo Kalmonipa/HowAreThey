@@ -76,10 +76,10 @@ function FriendRow({
   setModalContent,
   setShowModal,
  }) {
-  const [updatedFriend, setUpdatedFriend] = useState({ ...friend });
+  const [updatedFriend, setUpdatedFriend] = useState({friend});
 
   const handleInputChange = (field, value) => {
-    setUpdatedFriend(prev => ({ ...prev, [field]: value }));
+    setUpdatedFriend(prev => ({prev, [field]: value}));
   };
 
   const handleKeyPress = async (event) => {
@@ -171,9 +171,9 @@ function FriendRow({
   );
 }
 
-
 FriendRow.propTypes = {
   friend: PropTypes.shape({
+    ID: PropTypes.string,
     Name: PropTypes.string,
     LastContacted: PropTypes.string,
     Notes: PropTypes.string,
@@ -181,6 +181,9 @@ FriendRow.propTypes = {
   onExitEditMode: PropTypes.func.isRequired,
   setShowModal: PropTypes.func.isRequired,
   setModalContent: PropTypes.func.isRequired,
+  editable: PropTypes.bool.isRequired,
+  onRowClick: PropTypes.func.isRequired,
+  fetchFriendsData: PropTypes.func.isRequired,
 };
 
 export default FriendTable;
