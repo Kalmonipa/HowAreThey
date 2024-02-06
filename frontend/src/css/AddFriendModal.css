@@ -13,21 +13,33 @@
 .add-friend-modal {
     background-color: #C7F2A7;
     padding: 20px;
+    padding-top: 10px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+.header {
+    margin-top: 0px;
+    margin-left: 0px;
+    margin: 10px;
+}
+
 .name-input, .date-input {
-    border-radius: 20px;
+    border-radius: 15px;
     padding: 5px;
     margin-right: 10px;
+    border-width: 1px;
+
 }
 
 .notes-input {
-    border-radius: 20px;
+    border-radius: 15px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
     padding: 5px;
     margin-right: 10px;
     width: 100%;
+
 }
 
 .add-friend-modal .input-row {
@@ -42,12 +54,29 @@
   margin-top: 10px;
 }
 
-.close-button:hover {
+.save-button {
+    border-radius: 20px;
+    border-width: 1px;
+    padding: 10px;
+    width: 25%;
+    margin-left: 25px;
+
+}
+
+.close-button {
+    border-radius: 20px;
+    border-width: 1px;
+    padding: 10px;
+    width: 25%;
+    margin-right: 25px;
+}
+
+.close-button:hover, .save-button:hover {
     background-color: #DC965A;
     cursor: pointer;
 }
 
-.close-button:active {
+.close-button:active, .save-button:active {
     background-color: #3e8e41;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) inset;
 }

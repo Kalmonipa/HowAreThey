@@ -22,7 +22,6 @@ function FilterableFriendsTable({friends, setFriends}) {
     setIsEditable(!isEditable);
   };
 
-  // Inside your FilterableFriendsTable component
   const fetchFriends = useCallback(() => {
     fetch('http://localhost:8080/friends')
       .then(response => response.json())
@@ -30,7 +29,6 @@ function FilterableFriendsTable({friends, setFriends}) {
       .catch(error => console.error('Error fetching data:', error));
   }, []);
 
-  // Then, in your useEffect:
   useEffect(() => {
     fetchFriends();
   }, [fetchFriends]);

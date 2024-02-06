@@ -11,6 +11,15 @@ const AddFriendModal = ({ show, onClose, onSaved }) => {
   const [notes, setNotes] = useState('');
 
   const handleSave = () => {
+    if (!name.trim()) {
+      window.alert('Name field is empty');
+      return;
+    }
+    if (selectedDate === null) {
+      window.alert('No date selected. Enter approximate date if unknown');
+      return;
+    }
+
     const formattedDate = selectedDate
       ? selectedDate.toLocaleDateString('en-GB', {
         day: '2-digit',
@@ -33,12 +42,11 @@ const AddFriendModal = ({ show, onClose, onSaved }) => {
       body: JSON.stringify(friendData),
     }).then(response => {
       if (response.ok) {
-        // Call the onSaved callback prop
         onSaved();
       }
       return response.json();
     }).then(() => {
-      onClose(); // Close modal after saving
+      onClose();
     }).catch(error => console.error('Error:', error));
   };
 
@@ -49,11 +57,13 @@ if (!show) {
 return (
   <div className="add-friend-modal-backdrop">
     <div className="add-friend-modal">
-      <h3>Add a new friend</h3>
+      <h3 className="header">
+        Add a new friend
+      </h3>
       <div className="input-row">
         <input className='name-input'
           type="text"
-          placeholder="Name"
+          placeholder="Name..."
           value={name}
           onChange={e => setName(e.target.value)}
         />
@@ -61,17 +71,19 @@ return (
           selected={selectedDate}
           onChange={date => setSelectedDate(date)}
           dateFormat="dd/MM/yyyy"
-          placeholderText="Select a date"
+          placeholderText="Select a date..."
         />
       </div>
       <textarea className='notes-input'
-        placeholder="Notes"
+        placeholder="Notes..."
         value={notes}
         onChange={e => setNotes(e.target.value)}
+        rows="10"
+        cols="30"
       />
       <div className="button-row">
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onClose}>Close</button>
+        <button className='save-button' onClick={handleSave}>Save</button>
+        <button className='close-button' onClick={onClose}>Close</button>
       </div>
     </div>
   </div>

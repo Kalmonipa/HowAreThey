@@ -18,7 +18,6 @@ function SearchBar({
     </form>
   );
 }
-
 SearchBar.propTypes = {
   filterText: PropTypes.string.isRequired,
   onFilterTextChange: PropTypes.func.isRequired,
