@@ -51,6 +51,7 @@ function FriendTable({ friends, filterText }) {
       <table className="friend-table">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Name</th>
             <th>Last Contacted</th>
             <th>Notes</th>
@@ -75,8 +76,8 @@ function FriendRow({
   fetchFriendsData,
   setModalContent,
   setShowModal,
- }) {
-  const [updatedFriend, setUpdatedFriend] = useState({...friend});
+}) {
+  const [updatedFriend, setUpdatedFriend] = useState({ ...friend });
 
   const handleInputChange = (field, value) => {
     setUpdatedFriend(prev => ({...prev, [field]: value}));
@@ -133,16 +134,30 @@ function FriendRow({
         },
         body: JSON.stringify(updatedFriend),
       });
-      if (response.ok) {
-        await fetchFriendsData();
-      }
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      // Optionally, update the friends list in the parent component here
+      await fetchFriendsData();
       onExitEditMode();
     } catch (error) {
       console.error('Failed to update friend:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/friends/${friend.ID}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete friend');
+      }
+      await fetchFriendsData();
+      onExitEditMode();
+    } catch (error) {
+      console.error('Error deleting friend:', error);
+      setModalContent(`Error deleting friend: ${error.message}`);
+      setShowModal(true);
     }
   };
 
@@ -162,11 +177,22 @@ function FriendRow({
     );
   };
 
+  const renderDeleteButton = () => (
+    <td>
+      <button onClick={(e) => {
+        e.stopPropagation(); // Prevent triggering row click
+        handleDelete();
+      }}>Delete</button>
+    </td>
+  );
+
   return (
     <tr className="friend-table-row" onClick={onRowClick}>
+      {renderCell(friend.ID, 'ID', editable)}
       {renderCell(friend.Name, 'Name', editable)}
       {renderCell(friend.LastContacted, 'LastContacted', editable)}
       {renderCell(friend.Notes, 'Notes', editable)}
+      {editable && renderDeleteButton()}
     </tr>
   );
 }
