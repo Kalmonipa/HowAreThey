@@ -35,7 +35,6 @@ function AddFriendButton({ fetchFriends }) {
     </div>
   );
 }
-
 AddFriendButton.propTypes = {
   fetchFriends: PropTypes.func.isRequired,
 };
