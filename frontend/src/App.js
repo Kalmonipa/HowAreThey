@@ -1,25 +1,37 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import PropTypes from 'prop-types';
 
+import AddFriendButton from './components/AddFriendButton';
 import FriendTable from './components/FriendTable';
 import PageHeader from './components/PageHeader';
 import SearchBar from './components/SearchBar';
 import SettingsButton from './components/SettingsButton';
 import RandomFriendButton from './components/RandomFriendButton';
 
-
 import './css/ActivityBar.css'
 import './css/FriendTable.css';
 import './css/App.css';
 
 
-function FilterableFriendsTable({friends}) {
+function FilterableFriendsTable({friends, setFriends}) {
   const [filterText, setFilterText] = useState('');
   const [isEditable, setIsEditable] = useState(false);
+
 
   const toggleEdit = () => {
     setIsEditable(!isEditable);
   };
+
+  const fetchFriends = useCallback(() => {
+    fetch('http://localhost:8080/friends')
+      .then(response => response.json())
+      .then(data => setFriends(data))
+      .catch(error => console.error('Error fetching data:', error));
+  }, []);
+
+  useEffect(() => {
+    fetchFriends();
+  }, [fetchFriends]);
 
   const handleRandomFriend = () => {
     fetch('http://localhost:8080/friends/random')
@@ -45,6 +57,7 @@ function FilterableFriendsTable({friends}) {
           onFilterTextChange={setFilterText}
         />
         <div className="button-group">
+          <AddFriendButton fetchFriends={fetchFriends} />
           <RandomFriendButton onRandomFriendSelect={handleRandomFriend} />
           <SettingsButton isEditable={isEditable} onClick={toggleEdit} />
         </div>
@@ -80,7 +93,8 @@ export default function App() {
 
   return (
     <div>
-      <FilterableFriendsTable friends={friends} />
+      <FilterableFriendsTable friends={friends} setFriends={setFriends} />
     </div>
   );
+
 }
