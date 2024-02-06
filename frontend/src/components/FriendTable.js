@@ -76,10 +76,10 @@ function FriendRow({
   setModalContent,
   setShowModal,
  }) {
-  const [updatedFriend, setUpdatedFriend] = useState({friend});
+  const [updatedFriend, setUpdatedFriend] = useState({...friend});
 
   const handleInputChange = (field, value) => {
-    setUpdatedFriend(prev => ({prev, [field]: value}));
+    setUpdatedFriend(prev => ({...prev, [field]: value}));
   };
 
   const handleKeyPress = async (event) => {
