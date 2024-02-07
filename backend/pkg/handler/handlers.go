@@ -79,7 +79,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Friend removed successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Friend removed successfully"})
 }
 
 // GET /friends
