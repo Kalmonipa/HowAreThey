@@ -80,6 +80,7 @@ func main() {
 	db, err := createOrOpenSQLiteDB(dbFilePath)
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to open database: %v", err)
+		panic(err)
 	}
 	defer db.Close()
 
