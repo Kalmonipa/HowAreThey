@@ -97,7 +97,7 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 		c.JSON(http.StatusNotFound, "failed to pick a friend")
 	}
 
-	logger.LogMessage(logger.LogLevelInfo, randomFriend.Name+"has been chosen")
+	logger.LogMessage(logger.LogLevelInfo, randomFriend.Name+" has been chosen")
 
 	if url != "" {
 		models.SendNotification(randomFriend, url)
