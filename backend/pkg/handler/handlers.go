@@ -36,7 +36,7 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 
 	// Allow CORS for the frontend to access
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{"*"}
 
 	r.Use(cors.New(config))
 
