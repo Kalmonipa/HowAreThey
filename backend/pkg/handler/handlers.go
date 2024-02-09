@@ -85,7 +85,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	c.JSON(http.StatusOK, gin.H{"message": friend.Name + " removed successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": friend.Name + " removed successfully", "id": friend.ID})
 }
 
 // GET /friends
@@ -176,7 +176,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 
 	successMsg := newFriend.Name + " added successfully"
 
-	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
+	c.JSON(http.StatusCreated, gin.H{"message": successMsg, "id": newFriend.ID})
 }
 
 // PUT /friends/:id
