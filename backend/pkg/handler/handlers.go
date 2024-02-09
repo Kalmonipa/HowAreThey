@@ -66,7 +66,13 @@ func isValidDate(dateStr string) bool {
 func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	friendID := c.Param("id")
 
-	err := models.DeleteFriend(h.DB, friendID)
+	friend, err := models.GetFriendByID(friendID, h.FriendsList)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = models.DeleteFriend(h.DB, *friend)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -79,7 +85,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	}
 	h.FriendsList = friendsList
 
-	c.JSON(http.StatusOK, gin.H{"message": "Friend removed successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": friend.Name + " removed successfully", "id": friend.ID})
 }
 
 // GET /friends

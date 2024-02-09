@@ -137,12 +137,15 @@ func TestDeleteFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
+	friendOne := models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"}
+	friendTwo := models.Friend{ID: "2", Name: "Jack Reacher", LastContacted: "06/06/2023", Notes: "Must be on steroids"}
+
+	err = insertMockFriend(db, friendOne.ID, friendOne.Name, friendOne.LastContacted, friendOne.Notes)
 	assert.NoError(t, err)
-	err = insertMockFriend(db, "2", "Jack Reacher", "06/06/2023", "Must be on steroids")
+	err = insertMockFriend(db, friendTwo.ID, friendTwo.Name, friendTwo.LastContacted, friendTwo.Notes)
 	assert.NoError(t, err)
 
-	err = models.DeleteFriend(db, "2")
+	err = models.DeleteFriend(db, friendTwo)
 	assert.NoError(t, err)
 
 	var friendCount int

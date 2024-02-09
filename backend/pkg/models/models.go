@@ -84,19 +84,19 @@ func CalculateWeight(lastContacted string, currDate time.Time) (int, error) {
 }
 
 // Delete a friend from the db based on the ID provided
-func DeleteFriend(db *sql.DB, id string) error {
+func DeleteFriend(db *sql.DB, friend Friend) error {
 	stmt, err := db.Prepare("DELETE FROM friends WHERE id = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id)
+	_, err = stmt.Exec(friend.ID)
 	if err != nil {
 		return err
 	}
 
-	logger.LogMessage(logger.LogLevelInfo, "Friend deleted successfully")
+	logger.LogMessage(logger.LogLevelInfo, friend.Name+" (ID:"+friend.ID+") deleted successfully")
 	return nil
 }
 

@@ -177,12 +177,12 @@ func TestDeleteFriendRoute(t *testing.T) {
 
 	response := performRequest(mockRouter, "DELETE", "/friends/1", nil)
 
-	assert.Equal(t, http.StatusCreated, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	var resp map[string]string
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "Friend removed successfully", resp["message"])
+	assert.Equal(t, "John Wick removed successfully", resp["message"])
 
 	var count int
 	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = ?", "1").Scan(&count)
