@@ -72,7 +72,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 		return
 	}
 
-	err = models.DeleteFriend(h.DB, friendID)
+	err = models.DeleteFriend(h.DB, *friend)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -176,7 +176,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 
 	successMsg := newFriend.Name + " added successfully"
 
-	c.JSON(http.StatusCreated, gin.H{"message": successMsg, "id": newFriend.ID})
+	c.JSON(http.StatusCreated, gin.H{"message": successMsg})
 }
 
 // PUT /friends/:id
