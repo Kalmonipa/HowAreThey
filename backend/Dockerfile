@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
 COPY --from=builder /app/howarethey .
 
 # Copy the config files
-COPY sql/friends.db sql/friends.db
+# COPY sql/friends.db sql/friends.db
 
 # Change ownership of the working directory
 # This step ensures that the 'hat' user has the necessary permissions
