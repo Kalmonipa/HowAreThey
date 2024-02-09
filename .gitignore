@@ -20,5 +20,4 @@
 # Go workspace file
 go.work
 
-# My personal friends.yaml
-config/my-friends.yaml
+backend/sql/friends.db
