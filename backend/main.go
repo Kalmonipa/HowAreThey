@@ -124,6 +124,23 @@ func main() {
 	// Start the cron scheduler
 	c.Start()
 
+	notification_type := os.Getenv("NOTIFICATION_SERVICE")
+
+	switch notification_type {
+	case "DISCORD":
+		notification_type = "Discord"
+	case "NTFY":
+		notification_type = "ntfy"
+	case "TELEGRAM":
+		notification_type = "Telegram"
+	default:
+		notification_type = ""
+	}
+
+	if notification_type != "" {
+		logger.LogMessage(logger.LogLevelInfo, "Sending notifications to "+notification_type)
+	}
+
 	logger.LogMessage(logger.LogLevelInfo, "Starting webserver")
 
 	err = router.Run()
