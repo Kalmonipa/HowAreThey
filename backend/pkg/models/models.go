@@ -169,7 +169,9 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 	return Friend{}, errors.New("unable to select a random friend")
 }
 
-func SendNotification(friend Friend, url string) {
+// Notifications
+
+func SendDiscordNotification(friend Friend, url string) {
 	var username = "HowAreThey"
 
 	var content = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
@@ -188,15 +190,35 @@ func SendNotification(friend Friend, url string) {
 	// Marshal the payload to JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		panic(err)
+		logger.LogMessage(logger.LogLevelWarn, "Failed to marshal the payload: %s", err)
 	}
 
 	// Send the POST request
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		panic(err)
+		logger.LogMessage(logger.LogLevelWarn, "Failed to send the request: %s", err)
 	}
 	defer resp.Body.Close()
+}
+
+func SendNtfyNotification(friend Friend, url string) {
+	var message = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
+		friend.LastContacted + ". "
+
+	if friend.Notes != "" {
+		message = message + "Here's what you've got written down for them: " + friend.Notes
+	}
+
+	// Send the POST request
+	resp, err := http.Post(url, "text/plain", bytes.NewBufferString(message))
+	if err != nil {
+		logger.LogMessage(logger.LogLevelWarn, "Failed to send the request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.LogMessage(logger.LogLevelFatal, "Failed to send message to nfty. Status: %s", resp.Status)
+	}
 }
 
 func UpdateFriend(friendList FriendsList, newFriend *Friend) (FriendsList, error) {

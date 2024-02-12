@@ -95,18 +95,31 @@ func (h *FriendsHandler) GetFriends(c *gin.Context) {
 
 // GET /friends/random
 func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
-	url := os.Getenv("DISCORD_WEBHOOK")
+	notification_svc := os.Getenv("NOTIFICATION_SERVICE")
+	url := os.Getenv("WEBHOOK_URL")
 
 	randomFriend, err := models.PickRandomFriend(h.FriendsList)
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to get a random friend: %v", err)
 		c.JSON(http.StatusNotFound, "failed to pick a friend")
+		return
+	} else {
+		logger.LogMessage(logger.LogLevelInfo, randomFriend.Name+" has been chosen")
 	}
 
-	logger.LogMessage(logger.LogLevelInfo, randomFriend.Name+" has been chosen")
-
 	if url != "" {
-		models.SendNotification(randomFriend, url)
+		switch notification_svc {
+		case "DISCORD":
+			models.SendDiscordNotification(randomFriend, url)
+		case "TELEGRAM":
+			// Logic for Telegram notifications
+		case "NTFY":
+			models.SendNtfyNotification(randomFriend, url)
+		default:
+			// Default logic or error handling
+		}
+	} else {
+		logger.LogMessage(logger.LogLevelDebug, "No notification service set")
 	}
 
 	updatedFriend := models.UpdateLastContacted(randomFriend, time.Now())
