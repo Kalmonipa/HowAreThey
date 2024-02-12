@@ -40,7 +40,10 @@ COPY --from=builder /app/howarethey .
 
 # Change ownership of the working directory
 # This step ensures that the 'hat' user has the necessary permissions
-RUN chown -R hat:hat /home/hat
+RUN mkdir sql \
+    && chown -R hat:hat /home/hat
+
+# Create the sql directory
 
 # Expose the port the app runs on
 EXPOSE 8080
