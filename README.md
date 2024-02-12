@@ -32,5 +32,5 @@ services:
       - "8022:8080"
     volumes:
         # Define where your persistent storage goes too
-      - path/to/sql/dir/:/sql/
+      - path/to/sql/dir/:/home/hat/sql
 ```
