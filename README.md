@@ -2,22 +2,16 @@
 A reminder system to keep in touch with your friends
 
 ### Endpoints available
-`GET /friends` - Returns a list of all the friends in the database.
-	Example response:
-```
-[{"ID":"1","Name":"Jack Reacher","LastContacted":"06/10/2022","Notes":""},{"ID":"2","Name":"Tim the Toolman","LastContacted":"06/10/2022","Notes":"Never seen his neighbours face"},{"ID":"3","Name":"Sonic the Hedgehog","LastContacted":"06/10/2022","Notes":"Gotta go fast"}]
-```
-`GET /friends/count` - Returns the number of friends in the list
-`GET /friends/id/:id` - Returns the object with the ID specified
-`GET /friends/name/:name` - Returns the object with the name specified
-`GET /friends/random` - Picks a random friend from the database and returns their details
-	Example response:
-```
-{"ID":"3","Name":"Sonic the Hedgehog","LastContacted":"06/10/2022","Notes":"Gotta go fast"}
-```
-`DELETE /friends/:id` - Deletes the friend that matches the ID specified from the database.
-`POST /friends` - Adds the friend using the Name, LastContacted and Notes data specified in the request.
-`PUT /friends/:id` - Updates the friend that relates to :id specified with the new data specified in the request.
+| Endpoint | Description |
+|---|---|
+| `GET /friends` | Returns a list of all the friends in the database. |
+| `GET /friends/count` | Returns the number of friends in the list |
+| `GET /friends/id/:id` | Returns the object with the ID specified |
+| `GET /friends/name/:name` | Returns the object with the name specified |
+| `GET /friends/random` | Picks a random friend from the database and returns their details |
+| `DELETE /friends/:id` | Deletes the friend that matches the ID specified from the database. |
+| `POST /friends` | Adds the friend using the Name, LastContacted and Notes data specified in the request. |
+| `PUT /friends/:id` | Updates the friend that relates to :id specified with the new data specified in the request. |
 
 
 ### Docker Config
