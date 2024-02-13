@@ -1,29 +1,20 @@
 version: '3'
 
 services:
-  # Backend Golang app running the API
-  backend:
-    container_name: howarethey-backend
-    image: kalmonipa/howarethey-backend:v0.13
+  howarethey:
+    container_name: howarethey
+    image: kalmonipa/howarethey:v0.18
     restart: always
+    environment:
+        # Defines which service to send notifications too
+      - NOTIFICATION_SERVICE=DISCORD
+        # Discord Webhook to send notifications too. Read the discord webhook docs to get one
+      - WEBHOOK_URL=https://discord.com/api/webhooks/myexamplewebhook
+        # Picks a friend at 7am every Monday UTC
+      - CRON=0 0 7 * * 1
     ports:
+      # The Web UI
       - "8080:8080"
     volumes:
-     - $PWD/backend/sql/:/root/sql/
-    networks:
-      - howarethey-network
-  # Frontend React app
-  frontend:
-    container_name: howarethey-frontend
-    image: kalmonipa/howarethey-frontend:v0.13
-    restart: always
-    ports:
-      - "3000:3000"
-    networks:
-      - howarethey-network
-
-networks:
-  howarethey-network:
-    driver: bridge
-    external: true
-    name: howarethey-network
+        # Define where your persistent storage goes too
+      - path/to/sql/dir/:/home/hat/sql

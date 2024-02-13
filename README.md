@@ -27,26 +27,4 @@ Replace the tag with the tag you want to use
 docker run -p 8080:8080 -v $PWD/sql/:/home/hat/sql/ kalmonipa/howarethey:v0.16
 ```
 
-### Example docker-compose.yaml
-```
-version: '3'
-
-services:
-  howarethey:
-    container_name: howarethey
-    image: kalmonipa/howarethey:v0.16
-    restart: always
-    environment:
-        # Defines which service to send notifications too
-      - NOTIFICATION_SERVICE=DISCORD
-        # Discord Webhook to send notifications too. Read the discord webhook docs to get one
-      - WEBHOOK_URL=https://discord.com/api/webhooks/myexamplewebhook
-        # Picks a friend at 7am every Monday UTC
-      - CRON=0 0 7 * * 1
-    ports:
-      # The Web UI (enabled by --api.insecure=true)
-      - "8022:8080"
-    volumes:
-        # Define where your persistent storage goes too
-      - path/to/sql/dir/:/home/hat/sql
-```
+See `docker-compose.yaml` for an example Docker Compose file.
