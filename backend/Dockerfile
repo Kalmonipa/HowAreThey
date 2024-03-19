@@ -41,6 +41,7 @@ COPY --from=builder /app/howarethey .
 # Change ownership of the working directory
 # This step ensures that the 'hat' user has the necessary permissions
 RUN mkdir sql \
+    && mkdir logs \
     && chown -R hat:hat /home/hat
 
 # Create the sql directory

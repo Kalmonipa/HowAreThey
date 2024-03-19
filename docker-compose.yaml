@@ -3,7 +3,7 @@ version: '3'
 services:
   howarethey:
     container_name: howarethey
-    image: kalmonipa/howarethey:v0.18
+    image: kalmonipa/howarethey:v0.20
     restart: always
     environment:
         # Defines which service to send notifications too
@@ -16,5 +16,6 @@ services:
       # The Web UI
       - "8080:8080"
     volumes:
-        # Define where your persistent storage goes too
-      - path/to/sql/dir/:/home/hat/sql
+      # Define where your persistent storage goes too
+      - path/to/sql/dir:/home/hat/sql
+      - path/to/logs/dir:/home/hat/logs
