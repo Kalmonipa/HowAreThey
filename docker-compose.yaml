@@ -17,5 +17,5 @@ services:
       - "8080:8080"
     volumes:
       # Define where your persistent storage goes too
-      - path/to/sql/dir/:/home/hat/sql
+      - path/to/sql/dir:/home/hat/sql
       - path/to/logs/dir:/home/hat/logs
