@@ -20,7 +20,7 @@ func SetupTestDB() (*sql.DB, error) {
 		id INTEGER PRIMARY KEY,
 		name TEXT NOT NULL,
 		lastContacted TEXT NOT NULL,
-		birthday TEXT,
+		birthday TEXT NOT NULL,
 		notes TEXT NOT NULL
 	);`)
 	if err != nil {
