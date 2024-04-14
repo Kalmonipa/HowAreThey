@@ -50,6 +50,29 @@ func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
 	return mockRouter, mockFriendsHandler, nil
 }
 
+// Test GET /birthdays
+func TestFriendsBirthday(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	mockRouter, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
+
+	response := performRequest(mockRouter, "GET", "/birthdays", nil)
+
+	todaysDate := time.Now().Format("02/01")
+
+	assert.Equal(t, 200, response.Code)
+
+	if todaysDate == "23/02" {
+		expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"14/04/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"14/04/1996","Notes":"I think he's Spiderman"}]`
+		assert.Equal(t, expectedResult, response.Body.String())
+	} else {
+		assert.Equal(t, "[]", response.Body.String())
+	}
+
+}
+
 // Test GET /friends/count
 func TestFriendsCountRoute(t *testing.T) {
 	mockRouter, _, err := setupTestEnvironment()
@@ -208,6 +231,7 @@ func TestPutFriend(t *testing.T) {
 		ID:            "1",
 		Name:          "John Wick",
 		LastContacted: "06/06/2023",
+		Birthday:      "01/01/1900",
 		Notes:         "Nice guy",
 	}
 
@@ -241,10 +265,11 @@ func TestPutFriend(t *testing.T) {
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
+	assert.Equal(t, updatedFriend.Birthday, friend.Birthday)
 	assert.Equal(t, updatedFriend.Notes, friend.Notes)
 }
 
@@ -305,6 +330,7 @@ func TestPutNameOnly(t *testing.T) {
 		ID:            "1",
 		Name:          "John Wick",
 		LastContacted: "06/06/2023",
+		Birthday:      "23/02/1996",
 		Notes:         "Nice guy",
 	}
 
@@ -335,10 +361,11 @@ func TestPutNameOnly(t *testing.T) {
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
+	assert.Equal(t, mockFriend.Birthday, friend.Birthday)
 	assert.Equal(t, mockFriend.Notes, friend.Notes)
 }
 
@@ -384,9 +411,10 @@ func TestPutLastContactedOnly(t *testing.T) {
 	assert.Equal(t, "1 updated successfully", resp["message"])
 
 	var friend models.Friend
-	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, mockFriend.Name, friend.Name)
 	assert.Equal(t, todaysDate, friend.LastContacted)
+	assert.Equal(t, mockFriend.Birthday, friend.Birthday)
 	assert.Equal(t, mockFriend.Notes, friend.Notes)
 }

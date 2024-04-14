@@ -82,6 +82,33 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestCheckBirthday(t *testing.T) {
+	mockFriendsList := models.FriendsList{
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "20/10/1996", Notes: "I think he's Spiderman"},
+	}
+
+	mockTodaysDate := time.Date(2020, time.February, 23, 0, 0, 0, 0, time.UTC)
+
+	result := models.CheckBirthdays(mockFriendsList, mockTodaysDate)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].Name, "John Wick")
+}
+
+func TestCheckBirthdayNoResults(t *testing.T) {
+	mockFriendsList := models.FriendsList{
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "20/10/1996", Notes: "I think he's Spiderman"},
+	}
+
+	mockTodaysDate := time.Date(2020, time.January, 10, 0, 0, 0, 0, time.UTC)
+
+	result := models.CheckBirthdays(mockFriendsList, mockTodaysDate)
+
+	assert.Equal(t, len(result), 0)
+}
+
 func TestUpdateLastContact(t *testing.T) {
 	mockFriend := models.Friend{
 		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy",

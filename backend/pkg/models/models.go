@@ -84,6 +84,41 @@ func CalculateWeight(lastContacted string, currDate time.Time) (int, error) {
 	return days, nil
 }
 
+// Check all the friends birthdays to see if it's today
+func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
+	var bdayList FriendsList
+
+	// Format the date as DD/MM
+	formattedDate := todaysDate.Format("02/01")
+
+	for _, friend := range friends {
+		if friend.Birthday == "" {
+			continue
+		}
+
+		// Define the layout that matches the format of your date string
+		layout := "02/01/2006"
+
+		// Parse the date string into a time.Time type
+		friendsBday, err := time.Parse(layout, friend.Birthday)
+		friendsBdayFormatted := friendsBday.Format("02/01")
+		if err != nil {
+			fmt.Println("Error parsing date:", err)
+			return FriendsList{}
+		}
+
+		if friendsBdayFormatted == formattedDate {
+			bdayList = append(bdayList, friend)
+		}
+	}
+
+	if len(bdayList) > 0 {
+		return bdayList
+	} else {
+		return FriendsList{}
+	}
+}
+
 // Delete a friend from the db based on the ID provided
 func DeleteFriend(db *sql.DB, friend Friend) error {
 	stmt, err := db.Prepare("DELETE FROM friends WHERE id = ?")

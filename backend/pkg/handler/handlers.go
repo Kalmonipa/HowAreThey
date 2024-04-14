@@ -41,6 +41,7 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	r.Use(cors.New(config))
 
 	r.DELETE("/friends/:id", handler.DeleteFriend)
+	r.GET("/birthdays", handler.GetBirthdays)
 	r.GET("/friends", handler.GetFriends)
 	r.GET("/friends/random", handler.GetRandomFriend)
 	r.GET("/friends/count", handler.GetFriendCount)
@@ -86,6 +87,12 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 	h.FriendsList = friendsList
 
 	c.JSON(http.StatusOK, gin.H{"message": friend.Name + " removed successfully", "id": friend.ID})
+}
+
+// GET /birthdays
+func (h *FriendsHandler) GetBirthdays(c *gin.Context) {
+	logger.LogMessage(logger.LogLevelInfo, "Checking if any birthdays are today")
+	c.JSON(http.StatusOK, models.CheckBirthdays(h.FriendsList, time.Now()))
 }
 
 // GET /friends
@@ -193,6 +200,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 }
 
 // PUT /friends/:id
+// Updates the specified friend. Any keys not sent in the payload will not be edited.
 func (h *FriendsHandler) PutFriend(c *gin.Context) {
 	id := c.Param("id")
 
@@ -212,6 +220,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		logger.LogMessage(logger.LogLevelDebug, "Setting name to "+updatedFriend.Name)
 		currentFriend.Name = updatedFriend.Name
 	}
+
 	updatedLastContacted := updatedFriend.LastContacted
 	if updatedLastContacted != "" {
 		if !isValidDate(updatedLastContacted) {
@@ -222,6 +231,17 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		logger.LogMessage(logger.LogLevelDebug, "Setting last contacted to "+updatedFriend.LastContacted)
 		currentFriend.LastContacted = updatedFriend.LastContacted
 	}
+
+	if updatedFriend.Birthday != "" {
+		if !isValidDate(updatedFriend.Birthday) {
+			err = errors.New("Date must be in DD/MM/YYYY format." + updatedFriend.Birthday + "does not match.")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		logger.LogMessage(logger.LogLevelDebug, "Setting birthday to "+updatedFriend.Birthday)
+		currentFriend.Birthday = updatedFriend.Birthday
+	}
+
 	if updatedFriend.Notes != "" {
 		logger.LogMessage(logger.LogLevelDebug, "Setting notes to "+updatedFriend.Notes)
 		currentFriend.Notes = updatedFriend.Notes

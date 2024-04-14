@@ -1,11 +1,15 @@
 # HowAreThey
-A reminder system to keep in touch with your friends. Currently, this is just a backend web server with a few endpoints.
+A reminder system to keep in touch with your friends.
+
+Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database.
+
 The `frontend` directory is a work in progress and has multiple bugs and not many features. The `backend` web server works like a charm but use the `frontend` at your own peril or submit some Pull Requests to tidy it up.
 
 ### Endpoints available
 | Endpoint | Description |
 |---|---|
 | `GET /friends` | Returns a list of all the friends in the database. |
+| `GET /birthdays` | Returns a list of all the friends that have birthdays today |
 | `GET /friends/count` | Returns the number of friends in the list |
 | `GET /friends/id/:id` | Returns the object with the ID specified |
 | `GET /friends/name/:name` | Returns the object with the name specified |
