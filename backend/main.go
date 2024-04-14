@@ -40,9 +40,9 @@ func createOrOpenSQLiteDB(sqlFilePath string) (*sql.DB, error) {
 func createTable(db *sql.DB) error {
 	createTableSQL := `
     CREATE TABLE IF NOT EXISTS friends (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        lastContacted TEXT NOT NULL,
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		lastContacted TEXT NOT NULL,
 		birthday TEXT NOT NULL,
 		notes TEXT NOT NULL
     );`
