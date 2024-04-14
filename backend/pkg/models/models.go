@@ -23,6 +23,7 @@ type Friend struct {
 	ID            string
 	Name          string
 	LastContacted string
+	Birthday      string
 	Notes         string
 }
 
@@ -31,7 +32,7 @@ type FriendsList []Friend
 // Builds the list from the yaml file specified
 func BuildFriendsList(db *sql.DB) (FriendsList, error) {
 	// Query the database
-	rows, err := db.Query("SELECT id, name, lastContacted, notes FROM friends")
+	rows, err := db.Query("SELECT id, name, lastContacted, birthday, notes FROM friends")
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to select from db: %v", err)
 		return nil, err
@@ -41,7 +42,7 @@ func BuildFriendsList(db *sql.DB) (FriendsList, error) {
 	var friends FriendsList
 	for rows.Next() {
 		var f Friend
-		if err := rows.Scan(&f.ID, &f.Name, &f.LastContacted, &f.Notes); err != nil {
+		if err := rows.Scan(&f.ID, &f.Name, &f.LastContacted, &f.Birthday, &f.Notes); err != nil {
 			logger.LogMessage(logger.LogLevelFatal, "Failed to scan: %v", err)
 			return nil, err
 		}
@@ -241,13 +242,13 @@ func UpdateLastContacted(friend Friend, todaysDate time.Time) *Friend {
 
 // addFriend inserts a new friend into the database
 func AddFriend(db *sql.DB, newFriend Friend) error {
-	stmt, err := db.Prepare("INSERT INTO friends(name, lastContacted, notes) VALUES(?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO friends(name, lastContacted, birthday, notes) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(newFriend.Name, newFriend.LastContacted, newFriend.Notes)
+	_, err = stmt.Exec(newFriend.Name, newFriend.LastContacted, newFriend.Birthday, newFriend.Notes)
 	if err != nil {
 		return err
 	}
@@ -260,13 +261,13 @@ func AddFriend(db *sql.DB, newFriend Friend) error {
 
 // Updates a friend with new details
 func SqlUpdateFriend(db *sql.DB, id string, updatedFriend *Friend) error {
-	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? , notes = ? WHERE id = ?")
+	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ?, birthday = ?, notes = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(updatedFriend.Name, updatedFriend.LastContacted, updatedFriend.Notes, id)
+	_, err = stmt.Exec(updatedFriend.Name, updatedFriend.LastContacted, updatedFriend.Birthday, updatedFriend.Notes, id)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,6 @@
 # HowAreThey
 A reminder system to keep in touch with your friends. Currently, this is just a backend web server with a few endpoints.
-The `frontend` directory is a work in progress and has multiple bugs and not many features. Use at your own peril or submit some Pull Requests to tidy it up.
+The `frontend` directory is a work in progress and has multiple bugs and not many features. The `backend` web server works like a charm but use the `frontend` at your own peril or submit some Pull Requests to tidy it up.
 
 ### Endpoints available
 | Endpoint | Description |
