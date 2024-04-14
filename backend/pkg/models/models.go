@@ -207,15 +207,8 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 
 // Notifications
 
-func SendDiscordNotification(friend Friend, url string) {
+func SendDiscordNotification(friend Friend, url string, content string) {
 	var username = "HowAreThey"
-
-	var content = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
-		friend.LastContacted + ". "
-
-	if friend.Notes != "" {
-		content = content + "Here's what you've got written down for them: " + friend.Notes
-	}
 
 	// Create the payload
 	payload := DiscordWebhookPayload{
@@ -237,16 +230,9 @@ func SendDiscordNotification(friend Friend, url string) {
 	defer resp.Body.Close()
 }
 
-func SendNtfyNotification(friend Friend, url string) {
-	var message = "You should get in touch with " + friend.Name + ". You haven't spoken to them since " +
-		friend.LastContacted + ". "
-
-	if friend.Notes != "" {
-		message = message + "Here's what you've got written down for them: " + friend.Notes
-	}
-
+func SendNtfyNotification(friend Friend, url string, content string) {
 	// Send the POST request
-	resp, err := http.Post(url, "text/plain", bytes.NewBufferString(message))
+	resp, err := http.Post(url, "text/plain", bytes.NewBufferString(content))
 	if err != nil {
 		logger.LogMessage(logger.LogLevelWarn, "Failed to send the request: %s", err)
 	}

@@ -117,11 +117,24 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 	if url != "" {
 		switch notification_svc {
 		case "DISCORD":
-			models.SendDiscordNotification(randomFriend, url)
+			var content = "You should get in touch with " + randomFriend.Name + ". You haven't spoken to them since " +
+				randomFriend.LastContacted + ". "
+
+			if randomFriend.Notes != "" {
+				content = content + "Here's what you've got written down for them: " + randomFriend.Notes
+			}
+
+			models.SendDiscordNotification(randomFriend, url, content)
 		case "TELEGRAM":
 			// Logic for Telegram notifications
 		case "NTFY":
-			models.SendNtfyNotification(randomFriend, url)
+			var content = "You should get in touch with " + randomFriend.Name + ". You haven't spoken to them since " +
+				randomFriend.LastContacted + ". "
+
+			if randomFriend.Notes != "" {
+				content = content + "Here's what you've got written down for them: " + randomFriend.Notes
+			}
+			models.SendNtfyNotification(randomFriend, url, content)
 		default:
 			// Default logic or error handling
 		}
