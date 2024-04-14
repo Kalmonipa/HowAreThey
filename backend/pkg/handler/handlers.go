@@ -122,7 +122,6 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 		logger.LogMessage(logger.LogLevelDebug, "No notification service set")
 	}
 
-	logger.LogMessage(logger.LogLevelError, "Made it here")
 	updatedFriend := models.UpdateLastContacted(randomFriend, time.Now())
 
 	err = models.SqlUpdateFriend(h.DB, updatedFriend.ID, updatedFriend)
