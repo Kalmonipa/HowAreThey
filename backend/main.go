@@ -43,6 +43,7 @@ func createTable(db *sql.DB) error {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         lastContacted TEXT NOT NULL,
+		birthday TEXT NOT NULL,
 		notes TEXT NOT NULL
     );`
 

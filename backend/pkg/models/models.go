@@ -261,7 +261,7 @@ func AddFriend(db *sql.DB, newFriend Friend) error {
 
 // Updates a friend with new details
 func SqlUpdateFriend(db *sql.DB, id string, updatedFriend *Friend) error {
-	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ? , notes = ? WHERE id = ?")
+	stmt, err := db.Prepare("UPDATE friends SET name = ?, lastContacted = ?, birthday = ?, notes = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}

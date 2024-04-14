@@ -177,7 +177,7 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.NoError(t, err)
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
+	err = db.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
