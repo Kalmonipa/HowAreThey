@@ -8,6 +8,7 @@ import (
 	"howarethey/pkg/models"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -16,6 +17,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
+
+const (
+	LogLevelDebug = iota
+	LogLevelInfo
+	LogLevelWarn
+	LogLevelError
+	LogLevelFatal
+)
+
+var minLogLevel = LogLevelInfo
 
 func performRequest(r http.Handler, method, path string, body []byte) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, bytes.NewBuffer(body))
@@ -45,7 +56,6 @@ func setupMockHandler() *handler.FriendsHandler {
 func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
 	mockFriendsHandler := setupMockHandler()
 	mockRouter := handler.SetupRouter(mockFriendsHandler)
-
 	return mockRouter, mockFriendsHandler, nil
 }
 
@@ -114,6 +124,8 @@ func TestMissingFriendIDRoute(t *testing.T) {
 
 // Test GET /friends/random
 func TestGetRandomFriend(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
@@ -141,6 +153,9 @@ func TestGetRandomFriend(t *testing.T) {
 
 // Test POST /friends
 func TestAddFriendRoute(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
 		LastContacted: "15/01/2024",
@@ -168,6 +183,8 @@ func TestAddFriendRoute(t *testing.T) {
 
 // Test DELETE /friend/:id
 func TestDeleteFriendRoute(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
@@ -192,6 +209,9 @@ func TestDeleteFriendRoute(t *testing.T) {
 
 // Tests PUT /friends/:id
 func TestPutFriend(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
@@ -237,6 +257,9 @@ func TestPutFriend(t *testing.T) {
 // Tests PUT /friends/:id
 // Tests the endpoint when only Notes field is provided
 func TestPutNotesOnly(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
@@ -280,6 +303,9 @@ func TestPutNotesOnly(t *testing.T) {
 // Tests PUT /friends/:id
 // Tests the endpoint when only Name field is provided
 func TestPutNameOnly(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
@@ -323,6 +349,9 @@ func TestPutNameOnly(t *testing.T) {
 // Tests PUT /friends/:id
 // Tests the endpoint when only Last Contacted field is provided
 func TestPutLastContactedOnly(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	todaysDate := time.Now().Format("02/01/2006")
 	mockFriend := models.Friend{
 		ID:            "1",
