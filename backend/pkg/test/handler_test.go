@@ -18,16 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	LogLevelDebug = iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-	LogLevelFatal
-)
-
-var minLogLevel = LogLevelInfo
-
 func performRequest(r http.Handler, method, path string, body []byte) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -56,6 +46,7 @@ func setupMockHandler() *handler.FriendsHandler {
 func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
 	mockFriendsHandler := setupMockHandler()
 	mockRouter := handler.SetupRouter(mockFriendsHandler)
+
 	return mockRouter, mockFriendsHandler, nil
 }
 
