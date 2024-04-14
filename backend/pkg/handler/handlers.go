@@ -41,7 +41,7 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	r.Use(cors.New(config))
 
 	r.DELETE("/friends/:id", handler.DeleteFriend)
-	r.GET("/checkBirthdays", handler.CheckBirthdays)
+	r.GET("/birthdays", handler.GetBirthdays)
 	r.GET("/friends", handler.GetFriends)
 	r.GET("/friends/random", handler.GetRandomFriend)
 	r.GET("/friends/count", handler.GetFriendCount)
@@ -90,7 +90,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 }
 
 // GET /checkBirthdays
-func (h *FriendsHandler) CheckBirthdays(c *gin.Context) {
+func (h *FriendsHandler) GetBirthdays(c *gin.Context) {
 	logger.LogMessage(logger.LogLevelInfo, "Checking if any birthdays are today")
 	c.JSON(http.StatusOK, models.CheckBirthdays(h.FriendsList, time.Now()))
 }

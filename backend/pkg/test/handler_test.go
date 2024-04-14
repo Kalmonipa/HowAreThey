@@ -50,6 +50,29 @@ func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
 	return mockRouter, mockFriendsHandler, nil
 }
 
+// Test GET /birthdays
+func TestFriendsBirthday(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	mockRouter, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
+
+	response := performRequest(mockRouter, "GET", "/birthdays", nil)
+
+	todaysDate := time.Now().Format("02/01")
+
+	assert.Equal(t, 200, response.Code)
+
+	if todaysDate == "23/02" {
+		expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"14/04/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"14/04/1996","Notes":"I think he's Spiderman"}]`
+		assert.Equal(t, expectedResult, response.Body.String())
+	} else {
+		assert.Equal(t, "[]", response.Body.String())
+	}
+
+}
+
 // Test GET /friends/count
 func TestFriendsCountRoute(t *testing.T) {
 	mockRouter, _, err := setupTestEnvironment()
