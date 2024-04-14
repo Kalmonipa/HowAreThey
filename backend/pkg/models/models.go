@@ -92,6 +92,9 @@ func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
 	formattedDate := todaysDate.Format("02/01")
 
 	for _, friend := range friends {
+		if friend.Birthday == "" {
+			continue
+		}
 
 		// Define the layout that matches the format of your date string
 		layout := "02/01/2006"
