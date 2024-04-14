@@ -28,8 +28,8 @@ func performRequest(r http.Handler, method, path string, body []byte) *httptest.
 
 func setupMockHandler() *handler.FriendsHandler {
 	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
 
 	mockDb, _ := SetupTestDB()
@@ -67,7 +67,7 @@ func TestFriendsListRoute(t *testing.T) {
 
 	response := performRequest(router, "GET", "/friends", nil)
 
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Notes":"I think he's Spiderman"}]`
+	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"23/02/1996","Notes":"I think he's Spiderman"}]`
 
 	assert.Equal(t, 200, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
@@ -80,7 +80,7 @@ func TestFriendIDRoute(t *testing.T) {
 
 	response := performRequest(router, "GET", "/friends/id/1", nil)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
 	assert.Equal(t, 200, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
@@ -93,7 +93,7 @@ func TestFriendNameRoute(t *testing.T) {
 
 	response := performRequest(router, "GET", "/friends/name/john-wick", nil)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Notes":"Nice guy"}`
+	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
 	assert.Equal(t, 200, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
@@ -144,6 +144,7 @@ func TestAddFriendRoute(t *testing.T) {
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
 		LastContacted: "15/01/2024",
+		Birthday:      "23/02/1996",
 		Notes:         "I don't think she's a real person",
 	}
 	jsonValue, _ := json.Marshal(newFriend)
@@ -172,7 +173,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "Nice guy")
+	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
 	assert.NoError(t, err)
 
 	response := performRequest(mockRouter, "DELETE", "/friends/1", nil)
@@ -206,6 +207,7 @@ func TestPutFriend(t *testing.T) {
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
+		mockFriend.Birthday,
 		mockFriend.Notes,
 	)
 	assert.NoError(t, err)
@@ -213,6 +215,7 @@ func TestPutFriend(t *testing.T) {
 	updatedFriend := models.Friend{
 		Name:          "Master Chief",
 		LastContacted: "15/01/2024",
+		Birthday:      "23/02/1996",
 		Notes:         "Doesn't talk much",
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
@@ -251,6 +254,7 @@ func TestPutNotesOnly(t *testing.T) {
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
+		mockFriend.Birthday,
 		mockFriend.Notes,
 	)
 	assert.NoError(t, err)
@@ -294,6 +298,7 @@ func TestPutNameOnly(t *testing.T) {
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
+		mockFriend.Birthday,
 		mockFriend.Notes,
 	)
 	assert.NoError(t, err)
@@ -328,6 +333,7 @@ func TestPutLastContactedOnly(t *testing.T) {
 		ID:            "1",
 		Name:          "John Wick",
 		LastContacted: "06/06/2023",
+		Birthday:      "23/02/1996",
 		Notes:         "Nice guy",
 	}
 
@@ -338,6 +344,7 @@ func TestPutLastContactedOnly(t *testing.T) {
 		mockFriend.ID,
 		mockFriend.Name,
 		mockFriend.LastContacted,
+		mockFriend.Birthday,
 		mockFriend.Notes,
 	)
 	assert.NoError(t, err)

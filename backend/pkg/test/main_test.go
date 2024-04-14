@@ -20,6 +20,7 @@ func SetupTestDB() (*sql.DB, error) {
 		id INTEGER PRIMARY KEY,
 		name TEXT NOT NULL,
 		lastContacted TEXT NOT NULL,
+		birthday TEXT,
 		notes TEXT NOT NULL
 	);`)
 	if err != nil {
@@ -31,8 +32,8 @@ func SetupTestDB() (*sql.DB, error) {
 
 func TestPickRandom(t *testing.T) {
 	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
 
 	for i := 0; i < 10; i++ {
@@ -51,7 +52,7 @@ func TestPickRandom(t *testing.T) {
 
 func TestCalculateWeight(t *testing.T) {
 	mockFriend := models.Friend{
-		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy",
+		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy",
 	}
 
 	expectedWeight := 200
@@ -69,6 +70,7 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 		ID:            "3",
 		Name:          "Doctor Who",
 		LastContacted: "25/12/2070",
+		Birthday:      "23/02/1996",
 		Notes:         "Lives in a phonebox",
 	}
 
@@ -82,7 +84,7 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 
 func TestUpdateLastContact(t *testing.T) {
 	mockFriend := models.Friend{
-		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy",
+		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy",
 	}
 
 	todaysDate := time.Date(2023, time.December, 31, 0, 0, 0, 0, time.Local)
@@ -91,6 +93,7 @@ func TestUpdateLastContact(t *testing.T) {
 		ID:            mockFriend.ID,
 		Name:          mockFriend.Name,
 		LastContacted: "31/12/2023",
+		Birthday:      "23/02/1996",
 		Notes:         mockFriend.Notes,
 	}
 
@@ -101,8 +104,8 @@ func TestUpdateLastContact(t *testing.T) {
 
 func TestListFriendsNames(t *testing.T) {
 	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Notes: "I think he's Spiderman"},
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
 
 	expectedResult := []string{"John Wick", "Peter Parker"}
@@ -120,6 +123,7 @@ func TestAddFriend(t *testing.T) {
 	newFriend := models.Friend{
 		Name:          "Zark Muckerberg",
 		LastContacted: "15/01/2024",
+		Birthday:      "23/02/1996",
 		Notes:         "Definitely a lizard person",
 	}
 
@@ -137,12 +141,12 @@ func TestDeleteFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	friendOne := models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Notes: "Nice guy"}
-	friendTwo := models.Friend{ID: "2", Name: "Jack Reacher", LastContacted: "06/06/2023", Notes: "Must be on steroids"}
+	friendOne := models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"}
+	friendTwo := models.Friend{ID: "2", Name: "Jack Reacher", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Must be on steroids"}
 
-	err = insertMockFriend(db, friendOne.ID, friendOne.Name, friendOne.LastContacted, friendOne.Notes)
+	err = insertMockFriend(db, friendOne.ID, friendOne.Name, friendOne.LastContacted, friendOne.Birthday, friendOne.Notes)
 	assert.NoError(t, err)
-	err = insertMockFriend(db, friendTwo.ID, friendTwo.Name, friendTwo.LastContacted, friendTwo.Notes)
+	err = insertMockFriend(db, friendTwo.ID, friendTwo.Name, friendTwo.LastContacted, friendTwo.Birthday, friendTwo.Notes)
 	assert.NoError(t, err)
 
 	err = models.DeleteFriend(db, friendTwo)
@@ -159,12 +163,13 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "Nice guy")
+	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
 	assert.NoError(t, err)
 
 	updatedFriend := models.Friend{
 		Name:          "John Wick",
 		LastContacted: "10/01/2024",
+		Birthday:      "23/02/1996",
 		Notes:         "Nice guy",
 	}
 
@@ -172,7 +177,7 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.NoError(t, err)
 
 	var friend models.Friend
-	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Notes)
+	err = db.QueryRow("SELECT name, lastContacted, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
@@ -188,13 +193,13 @@ func containsFriend(friends models.FriendsList, friend models.Friend) bool {
 	return false
 }
 
-func insertMockFriend(db *sql.DB, id string, name string, lastContacted string, notes string) error {
-	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted, notes) VALUES (?, ?, ?, ?)")
+func insertMockFriend(db *sql.DB, id string, name string, lastContacted string, birthday string, notes string) error {
+	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted, birthday, notes) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, name, lastContacted, notes)
+	_, err = stmt.Exec(id, name, lastContacted, birthday, notes)
 	return err
 }
