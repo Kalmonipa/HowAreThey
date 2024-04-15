@@ -125,15 +125,6 @@ func main() {
 		friend_selector_schedule = "@weekly"
 	}
 
-	// Get the time of day to check if today is anyones birthday. Defaults to 8am.
-	// Must be between 0-24
-	if os.Getenv("BDAY_CHECK_TIME") != "" {
-		bday_check_time = os.Getenv("BDAY_CHECK_TIME")
-		bday_schedule = "0 " + bday_check_time + " * * *"
-	} else {
-		bday_schedule = "0 8 * * *"
-	}
-
 	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", friend_selector_schedule)
 
 	err = c.AddFunc(friend_selector_schedule, func() {
@@ -144,9 +135,23 @@ func main() {
 		panic(err)
 	}
 
-	err = c.AddFunc(bday_schedule, func() {
-
-	})
+	if os.Getenv("IGNORE_BIRTHDAYS") != "true" {
+		// Get the time of day to check if today is anyones birthday. Defaults to 8am.
+		// Must be between 0-23
+		if os.Getenv("BIRTHDAY_CHECK_TIME") != "" {
+			bday_check_time = os.Getenv("BIRTHDAY_CHECK_TIME")
+			bday_schedule = "0 " + bday_check_time + " * * *"
+		} else {
+			bday_schedule = "0 8 * * *"
+		}
+		err = c.AddFunc(bday_schedule, func() {
+			CheckBirthdaysToday()
+		})
+		if err != nil {
+			logger.LogMessage(logger.LogLevelFatal, "error: %v", err)
+			panic(err)
+		}
+	}
 
 	// Start the cron scheduler
 	c.Start()
