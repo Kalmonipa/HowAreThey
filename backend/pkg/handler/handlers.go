@@ -92,9 +92,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 func (h *FriendsHandler) GetBirthdays(c *gin.Context) {
 	logger.LogMessage(logger.LogLevelInfo, "Checking if any birthdays are today")
 
-	bdays_list := models.CheckBirthdays(h.FriendsList, time.Now())
-
-	c.JSON(http.StatusOK, bdays_list)
+	c.JSON(http.StatusOK, models.CheckBirthdays(h.FriendsList, time.Now()))
 }
 
 // GET /friends
