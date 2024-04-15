@@ -55,6 +55,16 @@ func createTable(db *sql.DB) error {
 	return nil
 }
 
+// CheckBirthdaysToday is used daily
+func CheckBirthdaysToday() {
+	resp, err := http.Get("http://localhost:8080/birthdays")
+	if err != nil {
+		logger.LogMessage(logger.LogLevelError, "Error calling GetRandomFriend: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+}
+
 // GetRandomFriendScheduled is used for scheduled calls, without a Gin context
 func GetRandomFriendScheduled() {
 	// Example of making an HTTP request to the endpoint
@@ -64,13 +74,16 @@ func GetRandomFriendScheduled() {
 		return
 	}
 	defer resp.Body.Close()
-	// Handle the response as needed
 }
 
 func main() {
 
-	var dbFilePath = "sql/friends.db"
-	var schedule string
+	var (
+		dbFilePath               = "sql/friends.db"
+		friend_selector_schedule string
+		bday_check_time          string
+		bday_schedule            string
+	)
 
 	// Sets up the logger
 	logger.SetupLogger()
@@ -105,22 +118,35 @@ func main() {
 
 	c := cron.New()
 
-	// Get the cron schedule or default to @weekly if it's not passed in
-	if os.Getenv("CRON") != "" {
-		schedule = os.Getenv("CRON")
+	// Get the cron schedule for when to select friends to contact or default to @weekly if it's not passed in
+	if os.Getenv("FRIEND_SELECTOR_CRON_SCHEDULE") != "" {
+		friend_selector_schedule = os.Getenv("FRIEND_SELECTOR_CRON_SCHEDULE")
 	} else {
-		schedule = "@weekly"
+		friend_selector_schedule = "@weekly"
 	}
 
-	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", schedule)
+	// Get the time of day to check if today is anyones birthday. Defaults to 8am.
+	// Must be between 0-24
+	if os.Getenv("BDAY_CHECK_TIME") != "" {
+		bday_check_time = os.Getenv("BDAY_CHECK_TIME")
+		bday_schedule = "0 " + bday_check_time + " * * *"
+	} else {
+		bday_schedule = "0 8 * * *"
+	}
 
-	err = c.AddFunc(schedule, func() {
+	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", friend_selector_schedule)
+
+	err = c.AddFunc(friend_selector_schedule, func() {
 		GetRandomFriendScheduled()
 	})
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "error: %v", err)
 		panic(err)
 	}
+
+	err = c.AddFunc(bday_schedule, func() {
+
+	})
 
 	// Start the cron scheduler
 	c.Start()
