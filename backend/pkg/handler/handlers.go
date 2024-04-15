@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"os"
 	"regexp"
 	"time"
 
@@ -92,6 +91,7 @@ func (h *FriendsHandler) DeleteFriend(c *gin.Context) {
 // GET /birthdays
 func (h *FriendsHandler) GetBirthdays(c *gin.Context) {
 	logger.LogMessage(logger.LogLevelInfo, "Checking if any birthdays are today")
+
 	c.JSON(http.StatusOK, models.CheckBirthdays(h.FriendsList, time.Now()))
 }
 
@@ -102,9 +102,6 @@ func (h *FriendsHandler) GetFriends(c *gin.Context) {
 
 // GET /friends/random
 func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
-	notification_svc := os.Getenv("NOTIFICATION_SERVICE")
-	url := os.Getenv("WEBHOOK_URL")
-
 	randomFriend, err := models.PickRandomFriend(h.FriendsList)
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to get a random friend: %v", err)
@@ -114,33 +111,13 @@ func (h *FriendsHandler) GetRandomFriend(c *gin.Context) {
 		logger.LogMessage(logger.LogLevelInfo, randomFriend.Name+" has been chosen")
 	}
 
-	if url != "" {
-		switch notification_svc {
-		case "DISCORD":
-			var content = "You should get in touch with " + randomFriend.Name + ". You haven't spoken to them since " +
-				randomFriend.LastContacted + ". "
+	var content = "You should get in touch with " + randomFriend.Name + ". You haven't spoken to them since " +
+		randomFriend.LastContacted + ". "
 
-			if randomFriend.Notes != "" {
-				content = content + "Here's what you've got written down for them: " + randomFriend.Notes
-			}
-
-			models.SendDiscordNotification(randomFriend, url, content)
-		case "TELEGRAM":
-			// Logic for Telegram notifications
-		case "NTFY":
-			var content = "You should get in touch with " + randomFriend.Name + ". You haven't spoken to them since " +
-				randomFriend.LastContacted + ". "
-
-			if randomFriend.Notes != "" {
-				content = content + "Here's what you've got written down for them: " + randomFriend.Notes
-			}
-			models.SendNtfyNotification(randomFriend, url, content)
-		default:
-			// Default logic or error handling
-		}
-	} else {
-		logger.LogMessage(logger.LogLevelDebug, "No notification service set")
+	if randomFriend.Notes != "" {
+		content = content + "Here's what you've got written down for them: " + randomFriend.Notes
 	}
+	models.SendNotification(content)
 
 	updatedFriend := models.UpdateLastContacted(randomFriend, time.Now())
 

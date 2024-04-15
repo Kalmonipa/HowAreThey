@@ -9,6 +9,7 @@ import (
 	"howarethey/pkg/logger"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -86,7 +87,11 @@ func CalculateWeight(lastContacted string, currDate time.Time) (int, error) {
 
 // Check all the friends birthdays to see if it's today
 func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
-	var bdayList FriendsList
+	var (
+		bdayList     FriendsList
+		friendsNames string
+		content      string
+	)
 
 	// Format the date as DD/MM
 	formattedDate := todaysDate.Format("02/01")
@@ -103,7 +108,7 @@ func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
 		friendsBday, err := time.Parse(layout, friend.Birthday)
 		friendsBdayFormatted := friendsBday.Format("02/01")
 		if err != nil {
-			fmt.Println("Error parsing date:", err)
+			logger.LogMessage(logger.LogLevelError, "error parsing the data: %v", err)
 			return FriendsList{}
 		}
 
@@ -112,10 +117,30 @@ func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
 		}
 	}
 
-	if len(bdayList) > 0 {
+	if len(bdayList) == 0 {
+		logger.LogMessage(logger.LogLevelInfo, "No birthdays today")
+
+		return FriendsList{}
+	} else if len(bdayList) == 1 {
+		content = "It's " + bdayList[0].Name + "s birthday today! You should say happy birthday."
+
+		logger.LogMessage(logger.LogLevelInfo, content)
+
+		SendNotification(content)
+
 		return bdayList
 	} else {
-		return FriendsList{}
+		for _, friend := range bdayList {
+			friendsNames = friendsNames + "s, " + friend.Name
+		}
+
+		content = "It's " + friendsNames + "s birthday today! You should say happy birthday to them."
+
+		logger.LogMessage(logger.LogLevelInfo, content)
+
+		SendNotification(content)
+
+		return bdayList
 	}
 }
 
@@ -207,7 +232,27 @@ func PickRandomFriend(friends FriendsList) (Friend, error) {
 
 // Notifications
 
-func SendDiscordNotification(friend Friend, url string, content string) {
+func SendNotification(content string) {
+	notification_svc := os.Getenv("NOTIFICATION_SERVICE")
+	url := os.Getenv("WEBHOOK_URL")
+
+	if url != "" {
+		switch notification_svc {
+		case "DISCORD":
+			SendDiscordNotification(url, content)
+		case "TELEGRAM":
+			// Logic for Telegram notifications
+		case "NTFY":
+			SendNtfyNotification(url, content)
+		default:
+			// Default logic or error handling
+		}
+	} else {
+		logger.LogMessage(logger.LogLevelDebug, "No notification service set")
+	}
+}
+
+func SendDiscordNotification(url string, content string) {
 	var username = "HowAreThey"
 
 	// Create the payload
@@ -230,7 +275,7 @@ func SendDiscordNotification(friend Friend, url string, content string) {
 	defer resp.Body.Close()
 }
 
-func SendNtfyNotification(friend Friend, url string, content string) {
+func SendNtfyNotification(url string, content string) {
 	// Send the POST request
 	resp, err := http.Post(url, "text/plain", bytes.NewBufferString(content))
 	if err != nil {
