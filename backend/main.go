@@ -144,9 +144,12 @@ func main() {
 		} else {
 			bday_schedule = "0 8 * * *"
 		}
+<<<<<<< HEAD
 
 		logger.LogMessage(logger.LogLevelInfo, "Checking for birthdays at "+bday_schedule)
 
+=======
+>>>>>>> main
 		err = c.AddFunc(bday_schedule, func() {
 			CheckBirthdaysToday()
 		})
