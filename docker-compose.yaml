@@ -11,7 +11,11 @@ services:
         # Discord Webhook to send notifications too. Read the discord webhook docs to get one
       - WEBHOOK_URL=https://discord.com/api/webhooks/myexamplewebhook
         # Picks a friend at 7am every Monday UTC
-      - CRON=0 7 * * 1
+      - FRIEND_SELECTOR_CRON_SCHEDULE=0 7 * * 1
+        # Defines what time of day in 24 hour time to notify of any birthdays
+      - BIRTHDAY_CHECK_TIME=8
+        # Explicitly tells the app the check for birthdays (defaults to `false` so this can be omitted)
+      - IGNORE_BIRTHDAYS=false
     ports:
       # The Web UI
       - "8080:8080"
