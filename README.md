@@ -24,7 +24,7 @@ The `frontend` directory is a work in progress and has multiple bugs and not man
 |---|---|---|---|
 | NOTIFICATION_SERVICE | Used to define which service to use for notifications. Can be one of DISCORD, NTFY | DISCORD | N/A |
 | WEBHOOK_URL | Provide a Discord webhook to send notifications to Discord. Not providing a webhook will only log the events, it won't send the notification anywhere | N/A | N/A |
-| FRIEND_SELECTOR_CRON_SCHEDULE | [Cron expression](https://crontab.guru/) to define how often a friend will get picked. By default, runs weekly. Use integer format for each field. | `0 0 7 * * 1` | `@weekly` |
+| FRIEND_SELECTOR_CRON_SCHEDULE | [Cron expression](https://crontab.guru/) to define how often a friend will get picked. By default, runs weekly. Use integer format for each field. | `0 7 * * 1` | `@weekly` |
 | BIRTHDAY_CHECK_TIME | What time of day the app should check for birthdays. Must be within 0-23; 0 being midnight-1am, 23 being 11pm-midnight | `"8"` | `8` |
 | IGNORE_BIRTHDAYS | Set to `true` if you don't want the app to check for birthdays | `true` | `false` |
 

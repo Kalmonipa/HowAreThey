@@ -6,8 +6,7 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/robfig/cron"
-	_ "github.com/robfig/cron/v3"
+	"github.com/robfig/cron/v3"
 
 	"howarethey/pkg/handler"
 	"howarethey/pkg/logger"
@@ -127,7 +126,7 @@ func main() {
 
 	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", friend_selector_schedule)
 
-	err = c.AddFunc(friend_selector_schedule, func() {
+	_, err = c.AddFunc(friend_selector_schedule, func() {
 		GetRandomFriendScheduled()
 	})
 	if err != nil {
@@ -147,7 +146,7 @@ func main() {
 
 		logger.LogMessage(logger.LogLevelInfo, "Checking for birthdays at "+bday_schedule)
 
-		err = c.AddFunc(bday_schedule, func() {
+		_, err = c.AddFunc(bday_schedule, func() {
 			CheckBirthdaysToday()
 		})
 		if err != nil {
