@@ -11,7 +11,7 @@ services:
         # Discord Webhook to send notifications too. Read the discord webhook docs to get one
       - WEBHOOK_URL=https://discord.com/api/webhooks/myexamplewebhook
         # Picks a friend at 7am every Monday UTC
-      - CRON=0 0 7 * * 1
+      - CRON=0 7 * * 1
     ports:
       # The Web UI
       - "8080:8080"
