@@ -8,7 +8,7 @@ HowAreThey
 You should get in touch with Jack Reacher. You haven't spoken to them since 06/06/2023.
 ```
 
-Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database. Updating the info is a bit finnicky if you're not used to using CLI/Curl/etc. I'm thinking of using something like Cobra to create a better way to update info.
+Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database. Updating the info is a bit finnicky if you're not used to using CLI/Curl/etc.
 
 I'm also working on a frontend web page for this but Javascript is hard and don't currently have the time to learn it at the moment.
 
