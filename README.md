@@ -1,9 +1,9 @@
 # HowAreThey
 A reminder system to keep in touch with your friends.
 
-Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database.
+Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database. It works like a charm.
 
-The `frontend` directory is a work in progress and has multiple bugs and not many features. The `backend` web server works like a charm but use the `frontend` at your own peril or submit some Pull Requests to tidy it up.
+I'm working on a `frontend` web page for this but Javascript is hard and don't currently have the time to learn it at the moment.
 
 ### Endpoints available
 | Endpoint | Description |
@@ -15,7 +15,7 @@ The `frontend` directory is a work in progress and has multiple bugs and not man
 | `GET /friends/name/:name` | Returns the object with the name specified |
 | `GET /friends/random` | Picks a random friend from the database and returns their details |
 | `DELETE /friends/:id` | Deletes the friend that matches the ID specified from the database. |
-| `POST /friends` | Adds the friend using the Name, LastContacted and Notes data specified in the request. |
+| `POST /friends` | Adds the friend using the Name, LastContacted, Birthday and Notes data specified in the request. |
 | `PUT /friends/:id` | Updates the friend that relates to :id specified with the new data specified in the request. |
 
 
