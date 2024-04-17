@@ -1,8 +1,0 @@
-.friend-table .editable-input {
-    width: 100%; /* Makes the input take the full width of the cell */
-    border: 1px solid #ccc; /* Adds a border to the input */
-    padding: 5px; /* Adds some padding inside the input */
-    box-sizing: border-box; /* Ensures padding doesn't increase the size of the input */
-    border-radius: 10px; /* Optional: Adds rounded corners to the input */
-    margin: 1px;
-  }

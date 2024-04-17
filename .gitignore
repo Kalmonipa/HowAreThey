@@ -27,3 +27,5 @@ sql/
 
 # Logs directory
 logs/
+
+dist/

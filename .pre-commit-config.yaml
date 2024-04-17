@@ -14,7 +14,7 @@ repos:
   hooks:
   - id: go-unit-tests
     name: go unit tests
-    entry: cd backend && go test -v ./...
+    entry: go test -v ./...
     pass_filenames: false
     types: [go]
     language: system
