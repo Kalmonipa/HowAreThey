@@ -1,0 +1,21 @@
+name: Go
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.x'
+      - name: Install dependencies
+        run: go get .
+      - name: Build
+        run: go build -v ./...
+      - name: Run Unit Tests with the Go CLI
+        run: go test -v ./pkg/test/unit_test
+      - name: Run Integration Tests with the Go CLI
+        run: ./run-integration-tests.sh
