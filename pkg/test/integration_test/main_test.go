@@ -102,7 +102,7 @@ func TestDockerDaemonRunning(t *testing.T) {
 	}
 }
 
-func TestDockerImageRunning(t *testing.T) {
+func TestDockerContainerRunning(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
