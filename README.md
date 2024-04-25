@@ -82,6 +82,7 @@ Write any new tests and run the following commands from the root directory
 
 #### Integration tests
 `./run-integration-tests.sh`
+
 To skip the image build step (if you already have an image for your feature branch on your local machine), set the `BUILD_IMAGE` env var to `false` and run the int test script. i.e:
 `BUILD_IMAGE="false" ./run-integration-tests.sh`
 

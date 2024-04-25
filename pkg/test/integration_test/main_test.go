@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
 	"io"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -30,6 +28,8 @@ var (
 	}
 )
 
+// Helper Functions
+
 func SetupTests() (*client.Client, context.Context, error) {
 	// Create a Docker client
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -43,10 +43,24 @@ func SetupTests() (*client.Client, context.Context, error) {
 	return cli, ctx, nil
 }
 
-func getGitBranchName() (string, error) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
+func addFriend() (statusCode int, body []byte, err error) {
+	mockFriend := mockFriendsList[0]
 
+	data := map[string]string{"Name": mockFriend.Name, "LastContacted": mockFriend.LastContacted}
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	respStatus, respBody, err := performRequest("POST", "/friends", payload)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return respStatus, respBody, nil
+}
+
+func getGitBranchName() (string, error) {
 	// Open the repository in the current directory
 	repo, err := git.PlainOpen("../../..")
 	if err != nil {
@@ -65,31 +79,63 @@ func getGitBranchName() (string, error) {
 	return branchName, nil
 }
 
-// func performRequest(method, path string, body []byte) (*http.Response, error) {
-// 	client := &http.Client{}
+func performRequest(method, path string, body []byte) (respStatusCode int, respBody []byte, err error) {
+	client := &http.Client{}
 
-// 	fullPath := "http://localhost:" + portNumber + path
+	fullPath := "http://localhost:" + portNumber + path
 
-// 	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
+	if err != nil {
+		return 0, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
 
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer resp.Body.Close()
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
 
-// 	return resp, nil
-// }
+	respBody, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return resp.StatusCode, respBody, nil
+}
+
+func startContainer(cli *client.Client, ctx context.Context) (container.CreateResponse, string, error) {
+	branchName, err := getGitBranchName()
+	if err != nil {
+		return container.CreateResponse{}, "", err
+	}
+
+	imageName = "kalmonipa/howarethey:" + branchName
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image:        imageName,
+		ExposedPorts: nat.PortSet{"8080": struct{}{}},
+	}, &container.HostConfig{
+		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(portNumber): {{HostIP: "127.0.0.1", HostPort: portNumber}}},
+	}, nil, nil, branchName)
+	if err != nil {
+		return container.CreateResponse{}, "", err
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		return container.CreateResponse{}, "", err
+	}
+
+	// Sleeping to give the webserver time to start up
+	time.Sleep(2 * time.Second)
+
+	return resp, branchName, nil
+}
+
+// Actual Test functions
 
 // This test is redundant because we wouldn't have got this far if the daemon wasn't running
 func TestDockerDaemonRunning(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
 	cli, _, err := SetupTests()
 	if err != nil {
 		t.Errorf("Error: %v", err)
@@ -103,37 +149,15 @@ func TestDockerDaemonRunning(t *testing.T) {
 }
 
 func TestDockerContainerRunning(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
 	cli, ctx, err := SetupTests()
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
 
-	branchName, err := getGitBranchName()
+	resp, branchName, err := startContainer(cli, ctx)
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
-
-	imageName = "kalmonipa/howarethey:" + branchName
-
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image:        imageName,
-		ExposedPorts: nat.PortSet{"8080": struct{}{}},
-	}, &container.HostConfig{
-		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(portNumber): {{HostIP: "127.0.0.1", HostPort: portNumber}}},
-	}, nil, nil, branchName)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	// Sleeping to give the webserver time to start up
-	time.Sleep(2 * time.Second)
 
 	containerState, err := cli.ContainerInspect(ctx, resp.ID)
 	if err != nil {
@@ -146,60 +170,20 @@ func TestDockerContainerRunning(t *testing.T) {
 }
 
 func TestAddFriend(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	mockFriend := mockFriendsList[0]
-
-	data := map[string]string{"Name": mockFriend.Name, "LastContacted": mockFriend.LastContacted}
-	payload, err := json.Marshal(data)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	resp, err := http.Post("http://localhost:"+portNumber+"/friends",
-		"application/json",
-		bytes.NewBuffer(payload))
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
+	respStatus, respBody, err := addFriend()
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
 
 	expectedResponse := "{\"message\":\"John Wick added successfully\"}"
 
-	assert.Equal(t, expectedResponse, string(bodyBytes))
+	assert.Equal(t, expectedResponse, string(respBody))
+
+	assert.Equal(t, http.StatusCreated, respStatus)
 }
 
 func TestDeleteFriend(t *testing.T) {
-	// response, err := performRequest("DELETE", "/friends/1", nil)
-	// if err != nil {
-	// 	t.Errorf("Error: %v", err)
-	// }
-
-	client := &http.Client{}
-
-	fullPath := "http://localhost:" + portNumber + "/friends/1"
-
-	req, err := http.NewRequest(http.MethodDelete, fullPath, nil)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	respBody, err := io.ReadAll(resp.Body)
+	respStatus, respBody, err := performRequest("DELETE", "/friends/1", nil)
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
@@ -207,5 +191,47 @@ func TestDeleteFriend(t *testing.T) {
 	var respJson map[string]string
 	err = json.Unmarshal(respBody, &respJson)
 	assert.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, respStatus)
 	assert.Equal(t, "John Wick removed successfully", respJson["message"])
+}
+
+// TODO: GET /birthdays
+func TestBirthdays(t *testing.T) {
+	assert.Equal(t, true, true)
+}
+
+// TODO: GET /friends/random
+func TestGetRandomFriend(t *testing.T) {
+	assert.Equal(t, true, true)
+}
+
+func TestGetFriendCount(t *testing.T) {
+	_, _, err := addFriend()
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	statusCode, body, err := performRequest("GET", "/friends/count", nil)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	assert.Equal(t, http.StatusOK, statusCode)
+	assert.Equal(t, "1", string(body))
+}
+
+// TODO: GET /friends/id/:id
+func TestGetFriendByID(t *testing.T) {
+	assert.Equal(t, true, true)
+}
+
+// TODO: GET /friends/name/:name
+func TestGetFriendByName(t *testing.T) {
+	assert.Equal(t, true, true)
+}
+
+// TODO: PUT /friends/:id
+func TestPutFriendByID(t *testing.T) {
+	assert.Equal(t, true, true)
 }
