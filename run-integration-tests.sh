@@ -7,8 +7,10 @@ CONTAINER_NAME="$BRANCH_NAME"
 
 ## Clean up
 cleanup() {
-    echo "Cleaning up $CONTAINER_NAME"
+    echo "INFO: Stopping $CONTAINER_NAME"
     docker stop "$CONTAINER_NAME"
+    echo "INFO: Removing $CONTAINER_NAME"
+    docker rm "$CONTAINER_NAME"
 }
 
 # TODO: Get this bit working from within the Go tests so I can remove this script
