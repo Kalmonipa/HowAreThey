@@ -65,25 +65,25 @@ func getGitBranchName() (string, error) {
 	return branchName, nil
 }
 
-func performRequest(method, path string, body []byte) (*http.Response, error) {
-	client := &http.Client{}
+// func performRequest(method, path string, body []byte) (*http.Response, error) {
+// 	client := &http.Client{}
 
-	fullPath := "http://localhost:" + portNumber + path
+// 	fullPath := "http://localhost:" + portNumber + path
 
-	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
+// 	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
 
-	return resp, nil
-}
+// 	return resp, nil
+// }
 
 // This test is redundant because we wouldn't have got this far if the daemon wasn't running
 func TestDockerDaemonRunning(t *testing.T) {
