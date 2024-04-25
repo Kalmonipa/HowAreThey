@@ -134,6 +134,15 @@ func TestDockerContainerRunning(t *testing.T) {
 
 	// Sleeping to give the webserver time to start up
 	time.Sleep(2 * time.Second)
+
+	containerState, err := cli.ContainerInspect(ctx, resp.ID)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	assert.Equal(t, "/"+branchName, containerState.ContainerJSONBase.Name) // Apparently the container name has a leading /
+	assert.Equal(t, "running", containerState.ContainerJSONBase.State.Status)
+
 }
 
 func TestAddFriend(t *testing.T) {
