@@ -76,7 +76,13 @@ Calling `GET /friends/random` will trigger a random friend to get chosen, their 
 | IGNORE_BIRTHDAYS | Set to `true` if you don't want the app to check for birthdays | `true` | `false` |
 
 ### Development
-Write any new unit tests and run them using
-`go test -v ./...`
+Write any new tests and run the following commands from the root directory
+#### Unit tests
+`go test -v ./pkg/test/unit_test`
 
-If the tests pass make any changes in a Pull Request with a detailed description.
+#### Integration tests
+`./run-integration-tests.sh`
+To skip the image build step (if you already have an image for your feature branch on your local machine), set the `BUILD_IMAGE` env var to `false` and run the int test script. i.e:
+`BUILD_IMAGE="false" ./run-integration-tests.sh`
+
+If the tests pass submit a Pull Request with a detailed description.
