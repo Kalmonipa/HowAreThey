@@ -2,7 +2,9 @@ package test
 
 import (
 	"database/sql"
+	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -10,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SetupTestDB() (*sql.DB, error) {
+func setupTestDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
@@ -83,6 +85,9 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 }
 
 func TestCheckBirthday(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
 	mockFriendsList := models.FriendsList{
 		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
 		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "20/10/1996", Notes: "I think he's Spiderman"},
@@ -143,7 +148,10 @@ func TestListFriendsNames(t *testing.T) {
 }
 
 func TestAddFriend(t *testing.T) {
-	db, err := SetupTestDB()
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	db, err := setupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -164,7 +172,7 @@ func TestAddFriend(t *testing.T) {
 }
 
 func TestDeleteFriend(t *testing.T) {
-	db, err := SetupTestDB()
+	db, err := setupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -186,7 +194,7 @@ func TestDeleteFriend(t *testing.T) {
 }
 
 func TestSqlUpdateFriend(t *testing.T) {
-	db, err := SetupTestDB()
+	db, err := setupTestDB()
 	assert.NoError(t, err)
 	defer db.Close()
 

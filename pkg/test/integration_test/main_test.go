@@ -7,14 +7,12 @@ import (
 	"howarethey/pkg/models"
 	"io"
 	"net/http"
-	"testing"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	git "github.com/go-git/go-git/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -43,16 +41,19 @@ func SetupTests() (*client.Client, context.Context, error) {
 	return cli, ctx, nil
 }
 
-func addFriend() (statusCode int, body []byte, err error) {
-	mockFriend := mockFriendsList[0]
-
-	data := map[string]string{"Name": mockFriend.Name, "LastContacted": mockFriend.LastContacted}
+func addFriend(mockFriend models.Friend) (statusCode int, body []byte, err error) {
+	data := map[string]string{
+		"Name":          mockFriend.Name,
+		"LastContacted": mockFriend.LastContacted,
+		"Birthday":      mockFriend.Birthday,
+		"Notes":         mockFriend.Notes,
+	}
 	payload, err := json.Marshal(data)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	respStatus, respBody, err := performRequest("POST", "/friends", payload)
+	respStatus, respBody, err := performContainerRequest("POST", "/friends", payload)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -79,7 +80,7 @@ func getGitBranchName() (string, error) {
 	return branchName, nil
 }
 
-func performRequest(method, path string, body []byte) (respStatusCode int, respBody []byte, err error) {
+func performContainerRequest(method, path string, body []byte) (respStatusCode int, respBody []byte, err error) {
 	client := &http.Client{}
 
 	fullPath := "http://localhost:" + portNumber + path
@@ -104,7 +105,7 @@ func performRequest(method, path string, body []byte) (respStatusCode int, respB
 	return resp.StatusCode, respBody, nil
 }
 
-func startContainer(cli *client.Client, ctx context.Context) (container.CreateResponse, string, error) {
+func startContainer(cli *client.Client, ctx context.Context) (response container.CreateResponse, branch string, err error) {
 	branchName, err := getGitBranchName()
 	if err != nil {
 		return container.CreateResponse{}, "", err
@@ -127,111 +128,19 @@ func startContainer(cli *client.Client, ctx context.Context) (container.CreateRe
 	}
 
 	// Sleeping to give the webserver time to start up
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	return resp, branchName, nil
 }
 
-// Actual Test functions
-
-// This test is redundant because we wouldn't have got this far if the daemon wasn't running
-func TestDockerDaemonRunning(t *testing.T) {
-	cli, _, err := SetupTests()
+func stopContainer(cli *client.Client, ctx context.Context, containerID string) {
+	err := cli.ContainerStop(ctx, containerID, container.StopOptions{})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return
 	}
 
-	// Ping the Docker daemon
-	_, err = cli.Ping(context.Background())
+	err = cli.ContainerRemove(ctx, containerID, container.RemoveOptions{})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return
 	}
-}
-
-func TestDockerContainerRunning(t *testing.T) {
-	cli, ctx, err := SetupTests()
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	resp, branchName, err := startContainer(cli, ctx)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	containerState, err := cli.ContainerInspect(ctx, resp.ID)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	assert.Equal(t, "/"+branchName, containerState.ContainerJSONBase.Name) // Apparently the container name has a leading /
-	assert.Equal(t, "running", containerState.ContainerJSONBase.State.Status)
-
-}
-
-func TestAddFriend(t *testing.T) {
-	respStatus, respBody, err := addFriend()
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	expectedResponse := "{\"message\":\"John Wick added successfully\"}"
-
-	assert.Equal(t, expectedResponse, string(respBody))
-
-	assert.Equal(t, http.StatusCreated, respStatus)
-}
-
-func TestDeleteFriend(t *testing.T) {
-	respStatus, respBody, err := performRequest("DELETE", "/friends/1", nil)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	var respJson map[string]string
-	err = json.Unmarshal(respBody, &respJson)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusOK, respStatus)
-	assert.Equal(t, "John Wick removed successfully", respJson["message"])
-}
-
-// TODO: GET /birthdays
-func TestBirthdays(t *testing.T) {
-	assert.Equal(t, true, true)
-}
-
-// TODO: GET /friends/random
-func TestGetRandomFriend(t *testing.T) {
-	assert.Equal(t, true, true)
-}
-
-func TestGetFriendCount(t *testing.T) {
-	_, _, err := addFriend()
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	statusCode, body, err := performRequest("GET", "/friends/count", nil)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	assert.Equal(t, http.StatusOK, statusCode)
-	assert.Equal(t, "1", string(body))
-}
-
-// TODO: GET /friends/id/:id
-func TestGetFriendByID(t *testing.T) {
-	assert.Equal(t, true, true)
-}
-
-// TODO: GET /friends/name/:name
-func TestGetFriendByName(t *testing.T) {
-	assert.Equal(t, true, true)
-}
-
-// TODO: PUT /friends/:id
-func TestPutFriendByID(t *testing.T) {
-	assert.Equal(t, true, true)
 }
