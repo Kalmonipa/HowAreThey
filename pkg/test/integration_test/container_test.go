@@ -130,8 +130,15 @@ func TestContainerGetRandomFriend(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, statusCode)
 
-	assert.Equal(t, "2", respJson.ID)
-	assert.Equal(t, "Peter Parker", respJson.Name)
+	found := false
+	for _, mockFriend := range mockFriendsList {
+		if mockFriend.ID == respJson.ID && mockFriend.Name == respJson.Name && mockFriend.LastContacted == respJson.LastContacted {
+			found = true
+			break
+		}
+	}
+
+	assert.True(t, found, "The returned friend should be in the mock friends list")
 
 }
 

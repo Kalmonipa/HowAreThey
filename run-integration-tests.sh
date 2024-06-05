@@ -23,12 +23,6 @@ build_image() {
     sleep 5
 }
 
-main() {
-
-    go test -v ./pkg/test/integration_test
-
-}
-
 trap cleanup EXIT
 
 # Skip building the image to save time running tests
@@ -38,4 +32,4 @@ else
     echo "INFO: Skipping image build"
 fi
 
-main
+go test -v ./pkg/test/integration_test
