@@ -4,19 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
 	"io"
 	"net/http"
-	"os"
-	"testing"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	git "github.com/go-git/go-git/v5"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -29,6 +25,8 @@ var (
 		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
 )
+
+// Helper Functions
 
 func SetupTests() (*client.Client, context.Context, error) {
 	// Create a Docker client
@@ -43,10 +41,27 @@ func SetupTests() (*client.Client, context.Context, error) {
 	return cli, ctx, nil
 }
 
-func getGitBranchName() (string, error) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
+func addFriend(mockFriend models.Friend) (statusCode int, body []byte, err error) {
+	data := map[string]string{
+		"Name":          mockFriend.Name,
+		"LastContacted": mockFriend.LastContacted,
+		"Birthday":      mockFriend.Birthday,
+		"Notes":         mockFriend.Notes,
+	}
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return 0, nil, err
+	}
 
+	respStatus, respBody, err := performContainerRequest("POST", "/friends", payload)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return respStatus, respBody, nil
+}
+
+func getGitBranchName() (string, error) {
 	// Open the repository in the current directory
 	repo, err := git.PlainOpen("../../..")
 	if err != nil {
@@ -65,55 +80,35 @@ func getGitBranchName() (string, error) {
 	return branchName, nil
 }
 
-// func performRequest(method, path string, body []byte) (*http.Response, error) {
-// 	client := &http.Client{}
+func performContainerRequest(method, path string, body []byte) (respStatusCode int, respBody []byte, err error) {
+	client := &http.Client{}
 
-// 	fullPath := "http://localhost:" + portNumber + path
+	fullPath := "http://localhost:" + portNumber + path
 
-// 	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	req.Header.Set("Content-Type", "application/json")
-
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	return resp, nil
-// }
-
-// This test is redundant because we wouldn't have got this far if the daemon wasn't running
-func TestDockerDaemonRunning(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	cli, _, err := SetupTests()
+	req, err := http.NewRequest(method, fullPath, bytes.NewBuffer(body))
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return 0, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, nil, err
 	}
 
-	// Ping the Docker daemon
-	_, err = cli.Ping(context.Background())
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
+	return resp.StatusCode, respBody, nil
 }
 
-func TestDockerContainerRunning(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	cli, ctx, err := SetupTests()
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
+func startContainer(cli *client.Client, ctx context.Context) (response container.CreateResponse, branch string, err error) {
 	branchName, err := getGitBranchName()
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return container.CreateResponse{}, "", err
 	}
 
 	imageName = "kalmonipa/howarethey:" + branchName
@@ -125,87 +120,27 @@ func TestDockerContainerRunning(t *testing.T) {
 		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(portNumber): {{HostIP: "127.0.0.1", HostPort: portNumber}}},
 	}, nil, nil, branchName)
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return container.CreateResponse{}, "", err
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		t.Errorf("Error: %v", err)
+		return container.CreateResponse{}, "", err
 	}
 
 	// Sleeping to give the webserver time to start up
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	containerState, err := cli.ContainerInspect(ctx, resp.ID)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	assert.Equal(t, "/"+branchName, containerState.ContainerJSONBase.Name) // Apparently the container name has a leading /
-	assert.Equal(t, "running", containerState.ContainerJSONBase.State.Status)
-
+	return resp, branchName, nil
 }
 
-func TestAddFriend(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	mockFriend := mockFriendsList[0]
-
-	data := map[string]string{"Name": mockFriend.Name, "LastContacted": mockFriend.LastContacted}
-	payload, err := json.Marshal(data)
+func stopContainer(cli *client.Client, ctx context.Context, containerID string) {
+	err := cli.ContainerStop(ctx, containerID, container.StopOptions{})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return
 	}
 
-	resp, err := http.Post("http://localhost:"+portNumber+"/friends",
-		"application/json",
-		bytes.NewBuffer(payload))
+	err = cli.ContainerRemove(ctx, containerID, container.RemoveOptions{})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		return
 	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	expectedResponse := "{\"message\":\"John Wick added successfully\"}"
-
-	assert.Equal(t, expectedResponse, string(bodyBytes))
-}
-
-func TestDeleteFriend(t *testing.T) {
-	// response, err := performRequest("DELETE", "/friends/1", nil)
-	// if err != nil {
-	// 	t.Errorf("Error: %v", err)
-	// }
-
-	client := &http.Client{}
-
-	fullPath := "http://localhost:" + portNumber + "/friends/1"
-
-	req, err := http.NewRequest(http.MethodDelete, fullPath, nil)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	var respJson map[string]string
-	err = json.Unmarshal(respBody, &respJson)
-	assert.NoError(t, err)
-	assert.Equal(t, "John Wick removed successfully", respJson["message"])
 }

@@ -15,7 +15,7 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v ./...
-      - name: Run Unit Tests with the Go CLI
+      - name: Run Unit Tests
         run: go test -v ./pkg/test/unit_test
-      - name: Run Integration Tests with the Go CLI
+      - name: Run Integration Tests
         run: ./run-integration-tests.sh

@@ -1,7 +1,8 @@
-package test
+package integration
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"howarethey/pkg/handler"
 	"howarethey/pkg/logger"
@@ -18,7 +19,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func performRequest(r http.Handler, method, path string, body []byte) *httptest.ResponseRecorder {
+func insertMockFriend(db *sql.DB, id string, name string, lastContacted string, birthday string, notes string) error {
+	stmt, err := db.Prepare("INSERT INTO friends (id, name, lastContacted, birthday, notes) VALUES (?, ?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id, name, lastContacted, birthday, notes)
+	return err
+}
+
+func setupTestDB() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS friends (
+		id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		lastContacted TEXT NOT NULL,
+		birthday TEXT NOT NULL,
+		notes TEXT NOT NULL
+	);`)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func performHandlerRequest(r http.Handler, method, path string, body []byte) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -33,7 +65,7 @@ func setupMockHandler() *handler.FriendsHandler {
 		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
 
-	mockDb, _ := SetupTestDB()
+	mockDb, _ := setupTestDB()
 
 	mockFriendsHandler := &handler.FriendsHandler{
 		FriendsList: mockFriendsList,
@@ -58,7 +90,7 @@ func TestFriendsBirthday(t *testing.T) {
 	mockRouter, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(mockRouter, "GET", "/birthdays", nil)
+	response := performHandlerRequest(mockRouter, "GET", "/birthdays", nil)
 
 	todaysDate := time.Now().Format("02/01")
 
@@ -78,7 +110,7 @@ func TestFriendsCountRoute(t *testing.T) {
 	mockRouter, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(mockRouter, "GET", "/friends/count", nil)
+	response := performHandlerRequest(mockRouter, "GET", "/friends/count", nil)
 
 	assert.Equal(t, 200, response.Code)
 	assert.Equal(t, "2", response.Body.String())
@@ -89,7 +121,7 @@ func TestFriendsListRoute(t *testing.T) {
 	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(router, "GET", "/friends", nil)
+	response := performHandlerRequest(router, "GET", "/friends", nil)
 
 	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"23/02/1996","Notes":"I think he's Spiderman"}]`
 
@@ -102,7 +134,7 @@ func TestFriendIDRoute(t *testing.T) {
 	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(router, "GET", "/friends/id/1", nil)
+	response := performHandlerRequest(router, "GET", "/friends/id/1", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
@@ -115,7 +147,7 @@ func TestFriendNameRoute(t *testing.T) {
 	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(router, "GET", "/friends/name/john-wick", nil)
+	response := performHandlerRequest(router, "GET", "/friends/name/john-wick", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
@@ -128,7 +160,7 @@ func TestMissingFriendIDRoute(t *testing.T) {
 	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(router, "GET", "/friends/id/100", nil)
+	response := performHandlerRequest(router, "GET", "/friends/id/100", nil)
 
 	expectedResult := `{"error":"friend not found"}`
 
@@ -144,7 +176,7 @@ func TestGetRandomFriend(t *testing.T) {
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(mockRouter, "GET", "/friends/random", nil)
+	response := performHandlerRequest(mockRouter, "GET", "/friends/random", nil)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -181,7 +213,7 @@ func TestAddFriendRoute(t *testing.T) {
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
 	assert.NoError(t, err)
 
-	response := performRequest(mockRouter, "POST", "/friends", jsonValue)
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
 
 	assert.Equal(t, http.StatusCreated, response.Code)
 
@@ -207,7 +239,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
 	assert.NoError(t, err)
 
-	response := performRequest(mockRouter, "DELETE", "/friends/1", nil)
+	response := performHandlerRequest(mockRouter, "DELETE", "/friends/1", nil)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -255,7 +287,7 @@ func TestPutFriend(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
+	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -303,7 +335,7 @@ func TestPutNotesOnly(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
+	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -351,7 +383,7 @@ func TestPutNameOnly(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
+	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -401,7 +433,7 @@ func TestPutLastContactedOnly(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
 
-	response := performRequest(mockRouter, "PUT", "/friends/1", jsonValue)
+	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 

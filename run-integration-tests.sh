@@ -7,10 +7,12 @@ CONTAINER_NAME="$BRANCH_NAME"
 
 ## Clean up
 cleanup() {
-    echo "INFO: Stopping $CONTAINER_NAME"
-    docker stop "$CONTAINER_NAME"
-    echo "INFO: Removing $CONTAINER_NAME"
-    docker rm "$CONTAINER_NAME"
+    if [ "$(docker ps -a | grep $CONTAINER_NAME)" ]; then
+        echo "INFO: Stopping $CONTAINER_NAME"
+        docker stop "$CONTAINER_NAME" > /dev/null
+        echo "INFO: Removing $CONTAINER_NAME"
+        docker rm "$CONTAINER_NAME" > /dev/null
+   fi
 }
 
 # TODO: Get this bit working from within the Go tests so I can remove this script
@@ -23,12 +25,6 @@ build_image() {
     sleep 5
 }
 
-main() {
-
-    go test -v ./pkg/test/integration_test
-
-}
-
 trap cleanup EXIT
 
 # Skip building the image to save time running tests
@@ -38,4 +34,4 @@ else
     echo "INFO: Skipping image build"
 fi
 
-main
+go test -v ./pkg/test/integration_test
