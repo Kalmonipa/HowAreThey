@@ -179,7 +179,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 
 	if newFriend.LastContacted != "" {
 		if !isValidDate(newFriend.LastContacted) {
-			err := errors.New("Last Contacted date must be in DD/MM/YYYY format." + newFriend.LastContacted + " does not match.")
+			err := errors.New("Last Contacted date must be in DD/MM/YYYY format. " + newFriend.LastContacted + " does not match")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -187,7 +187,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 
 	if newFriend.Birthday != "" {
 		if !isValidDate(newFriend.Birthday) {
-			err := errors.New("Birthday must be in DD/MM/YYYY format." + newFriend.Birthday + " does not match.")
+			err := errors.New("Birthday must be in DD/MM/YYYY format. " + newFriend.Birthday + " does not match")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

@@ -272,6 +272,11 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, response.Code)
 
+	var resp map[string]string
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Equal(t, "Last Contacted date must be in DD/MM/YYYY format. 15 does not match", resp["error"])
+
 	var count int
 	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
 	assert.NoError(t, err)
@@ -286,7 +291,7 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
-		LastContacted: "15/-1/1990",
+		LastContacted: "15/01/1990",
 		Birthday:      "23",
 		Notes:         "I don't think she's a real person",
 	}
@@ -298,6 +303,11 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
 
 	assert.Equal(t, http.StatusInternalServerError, response.Code)
+
+	var resp map[string]string
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Equal(t, "Birthday must be in DD/MM/YYYY format. 23 does not match", resp["error"])
 
 	var count int
 	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
