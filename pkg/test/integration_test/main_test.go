@@ -24,12 +24,6 @@ var (
 		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
 		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
 	}
-
-	// Friends list with bad data
-	mockFriendsListwBadData = models.FriendsList{
-		models.Friend{ID: "10", Name: "10", LastContacted: "10", Birthday: "10", Notes: "10"},
-		models.Friend{ID: "5", Name: "5", LastContacted: "5", Birthday: "5", Notes: "5"},
-	}
 )
 
 // Helper Functions
