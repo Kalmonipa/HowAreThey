@@ -171,6 +171,28 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 		return
 	}
 
+	if newFriend.Name == "" {
+		err := errors.New("name must not be blank")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if newFriend.LastContacted != "" {
+		if !isValidDate(newFriend.LastContacted) {
+			err := errors.New("Last Contacted date must be in DD/MM/YYYY format. " + newFriend.LastContacted + " does not match")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	if newFriend.Birthday != "" {
+		if !isValidDate(newFriend.Birthday) {
+			err := errors.New("Birthday must be in DD/MM/YYYY format. " + newFriend.Birthday + " does not match")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
 	err := models.AddFriend(h.DB, newFriend)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
