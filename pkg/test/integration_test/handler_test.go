@@ -156,6 +156,7 @@ func TestFriendNameRoute(t *testing.T) {
 }
 
 // Test GET /friends/id/:id
+// Searches for an id that shouldn't exist
 func TestMissingFriendIDRoute(t *testing.T) {
 	router, _, err := setupTestEnvironment()
 	assert.NoError(t, err)
@@ -226,6 +227,82 @@ func TestAddFriendRoute(t *testing.T) {
 	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
+}
+
+// Test POST /friends
+// Using no data so it should fail
+func TestAddFriendRouteNoData(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	newFriend := models.Friend{}
+	jsonValue, _ := json.Marshal(newFriend)
+
+	mockRouter, _, err := setupTestEnvironment()
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusInternalServerError, response.Code)
+
+	var resp map[string]string
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Equal(t, "name must not be blank", resp["error"])
+}
+
+// Test POST /friends
+// Using bad LastContacted data so it should fail
+func TestAddFriendRouteBadLastContactedData(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	newFriend := models.Friend{
+		Name:          "Jane Doe",
+		LastContacted: "15",
+		Birthday:      "23/01/1990",
+		Notes:         "I don't think she's a real person",
+	}
+	jsonValue, _ := json.Marshal(newFriend)
+
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusInternalServerError, response.Code)
+
+	var count int
+	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, count)
+}
+
+// Test POST /friends
+// Using bad Birthday data so it should fail
+func TestAddFriendRouteBadBirthdayData(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	newFriend := models.Friend{
+		Name:          "Jane Doe",
+		LastContacted: "15/-1/1990",
+		Birthday:      "23",
+		Notes:         "I don't think she's a real person",
+	}
+	jsonValue, _ := json.Marshal(newFriend)
+
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusInternalServerError, response.Code)
+
+	var count int
+	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, count)
 }
 
 // Test DELETE /friend/:id
