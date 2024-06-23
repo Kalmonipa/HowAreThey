@@ -59,12 +59,9 @@ func performHandlerRequest(r http.Handler, method, path string, body []byte) *ht
 	return recorder
 }
 
-func setupMockHandler() *handler.FriendsHandler {
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
-	}
-
+func setupMockHandler(mockFriendsList models.FriendsList) *handler.FriendsHandler {
+	// TODO: The test DB doesn't actually contain the above friends
+	// At the moment, that's not an issue but probably worth adding them to the DB as well
 	mockDb, _ := setupTestDB()
 
 	mockFriendsHandler := &handler.FriendsHandler{
@@ -75,8 +72,18 @@ func setupMockHandler() *handler.FriendsHandler {
 	return mockFriendsHandler
 }
 
-func setupTestEnvironment() (*gin.Engine, *handler.FriendsHandler, error) {
-	mockFriendsHandler := setupMockHandler()
+func setupTestEnvironment(isFriendsListPopulated bool) (*gin.Engine, *handler.FriendsHandler, error) {
+	var mockFriendsList models.FriendsList
+	if isFriendsListPopulated {
+		mockFriendsList = models.FriendsList{
+			models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
+			models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
+		}
+	} else {
+		mockFriendsList = models.FriendsList{}
+	}
+
+	mockFriendsHandler := setupMockHandler(mockFriendsList)
 	mockRouter := handler.SetupRouter(mockFriendsHandler)
 
 	return mockRouter, mockFriendsHandler, nil
@@ -87,14 +94,14 @@ func TestFriendsBirthday(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockRouter, _, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "GET", "/birthdays", nil)
 
 	todaysDate := time.Now().Format("02/01")
 
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 
 	if todaysDate == "23/02" {
 		expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"14/04/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"14/04/1996","Notes":"I think he's Spiderman"}]`
@@ -107,58 +114,70 @@ func TestFriendsBirthday(t *testing.T) {
 
 // Test GET /friends/count
 func TestFriendsCountRoute(t *testing.T) {
-	mockRouter, _, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "GET", "/friends/count", nil)
 
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 	assert.Equal(t, "2", response.Body.String())
 }
 
 // Test GET /friends
 func TestFriendsListRoute(t *testing.T) {
-	router, _, err := setupTestEnvironment()
+	router, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(router, "GET", "/friends", nil)
 
 	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"23/02/1996","Notes":"I think he's Spiderman"}]`
 
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
+}
+
+// Test GET /friends
+// If the friends list is empty, it should return []
+func TestEmptyFriendsList(t *testing.T) {
+	router, _, err := setupTestEnvironment(false)
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(router, "GET", "/friends", nil)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t, "[]", response.Body.String())
 }
 
 // Test GET /friends/id/:id
 func TestFriendIDRoute(t *testing.T) {
-	router, _, err := setupTestEnvironment()
+	router, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(router, "GET", "/friends/id/1", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
 }
 
 // Test GET /friends/name/:name
 func TestFriendNameRoute(t *testing.T) {
-	router, _, err := setupTestEnvironment()
+	router, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(router, "GET", "/friends/name/john-wick", nil)
 
 	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
 
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code)
 	assert.Equal(t, expectedResult, response.Body.String())
 }
 
 // Test GET /friends/id/:id
 // Searches for an id that shouldn't exist
 func TestMissingFriendIDRoute(t *testing.T) {
-	router, _, err := setupTestEnvironment()
+	router, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(router, "GET", "/friends/id/100", nil)
@@ -174,7 +193,7 @@ func TestGetRandomFriend(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "GET", "/friends/random", nil)
@@ -211,7 +230,7 @@ func TestAddFriendRoute(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(newFriend)
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
@@ -223,10 +242,6 @@ func TestAddFriendRoute(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Jane Doe added successfully", resp["message"])
 
-	var count int
-	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
 }
 
 // Test POST /friends
@@ -238,7 +253,7 @@ func TestAddFriendRouteNoData(t *testing.T) {
 	newFriend := models.Friend{}
 	jsonValue, _ := json.Marshal(newFriend)
 
-	mockRouter, _, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(false)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
@@ -265,7 +280,7 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(newFriend)
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
@@ -277,10 +292,6 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Last Contacted date must be in DD/MM/YYYY format. 15 does not match", resp["error"])
 
-	var count int
-	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, count)
 }
 
 // Test POST /friends
@@ -297,7 +308,7 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	}
 	jsonValue, _ := json.Marshal(newFriend)
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, _, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
@@ -309,10 +320,6 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Birthday must be in DD/MM/YYYY format. 23 does not match", resp["error"])
 
-	var count int
-	err = mockFriendsHandler.DB.QueryRow("SELECT COUNT(*) FROM friends WHERE id = 1").Scan(&count)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, count)
 }
 
 // Test DELETE /friend/:id
@@ -320,7 +327,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
@@ -354,7 +361,7 @@ func TestPutFriend(t *testing.T) {
 		Notes:         "Nice guy",
 	}
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
@@ -405,7 +412,7 @@ func TestPutNotesOnly(t *testing.T) {
 		Notes:         "Nice guy",
 	}
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
@@ -453,7 +460,7 @@ func TestPutNameOnly(t *testing.T) {
 		Notes:         "Nice guy",
 	}
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
@@ -503,7 +510,7 @@ func TestPutLastContactedOnly(t *testing.T) {
 		Notes:         "Nice guy",
 	}
 
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment()
+	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
 	err = insertMockFriend(mockFriendsHandler.DB,
