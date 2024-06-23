@@ -121,7 +121,7 @@ func main() {
 	if os.Getenv("FRIEND_SELECTOR_CRON_SCHEDULE") != "" {
 		friend_selector_schedule = os.Getenv("FRIEND_SELECTOR_CRON_SCHEDULE")
 	} else {
-		friend_selector_schedule = "@weekly"
+		friend_selector_schedule = "0 7 * * 1"
 	}
 
 	logger.LogMessage(logger.LogLevelInfo, "Running on the schedule: %s", friend_selector_schedule)
