@@ -105,7 +105,7 @@ func performContainerRequest(method, path string, body []byte) (respStatusCode i
 	return resp.StatusCode, respBody, nil
 }
 
-func startContainer(cli *client.Client, ctx context.Context) (response container.CreateResponse, branch string, err error) {
+func startContainer(cli *client.Client, ctx context.Context, envArgs []string) (response container.CreateResponse, branch string, err error) {
 	branchName, err := getGitBranchName()
 	if err != nil {
 		return container.CreateResponse{}, "", err
@@ -116,6 +116,7 @@ func startContainer(cli *client.Client, ctx context.Context) (response container
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image:        imageName,
 		ExposedPorts: nat.PortSet{"8080": struct{}{}},
+		Env:          envArgs,
 	}, &container.HostConfig{
 		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(portNumber): {{HostIP: "127.0.0.1", HostPort: portNumber}}},
 	}, nil, nil, branchName)

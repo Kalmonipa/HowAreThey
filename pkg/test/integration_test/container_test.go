@@ -10,7 +10,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// This test is redundant because we wouldn't have got this far if the daemon wasn't running
+var envArgTestCases = map[string]struct {
+	envArgs []string
+	result  string
+}{
+	"no args": {
+		envArgs: []string{},
+		result:  "",
+	},
+	"discord notification": {
+		envArgs: []string{"NOTIFICATION_SERVICE=DISCORD"},
+		result:  "NOTIFICATION_SERVICE=DISCORD",
+	},
+	"ntfy notification": {
+		envArgs: []string{"NOTIFICATION_SERVICE=NTFY"},
+		result:  "NOTIFICATION_SERVICE=NTFY",
+	},
+	"webhook url": {
+		envArgs: []string{"WEBHOOK_URL=http://www.example-webhook.com/this-is-fake"},
+		result:  "WEBHOOK_URL=http://www.example-webhook.com/this-is-fake",
+	},
+}
+
+// This test is kinda redundant because we wouldn't have got this far if the daemon wasn't running
 func TestDockerDaemonRunning(t *testing.T) {
 	cli, _, err := SetupTests()
 	assert.NoError(t, err)
@@ -20,11 +42,12 @@ func TestDockerDaemonRunning(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Tests that we want to run with different configurations
 func TestDockerContainerRunning(t *testing.T) {
 	cli, ctx, err := SetupTests()
 	assert.NoError(t, err)
 
-	resp, branchName, err := startContainer(cli, ctx)
+	resp, branchName, err := startContainer(cli, ctx, []string{})
 	assert.NoError(t, err)
 
 	defer stopContainer(cli, ctx, resp.ID)
@@ -41,7 +64,9 @@ func TestContainerAddFriend(t *testing.T) {
 	cli, ctx, err := SetupTests()
 	assert.NoError(t, err)
 
-	resp, _, err := startContainer(cli, ctx)
+	var envArgs []string
+
+	resp, _, err := startContainer(cli, ctx, envArgs)
 	assert.NoError(t, err)
 
 	defer stopContainer(cli, ctx, resp.ID)
@@ -60,7 +85,9 @@ func TestContainerDeleteFriend(t *testing.T) {
 	cli, ctx, err := SetupTests()
 	assert.NoError(t, err)
 
-	resp, _, err := startContainer(cli, ctx)
+	var envArgs []string
+
+	resp, _, err := startContainer(cli, ctx, envArgs)
 	assert.NoError(t, err)
 
 	defer stopContainer(cli, ctx, resp.ID)
@@ -84,7 +111,9 @@ func TestContainerGetRandomFriend(t *testing.T) {
 	cli, ctx, err := SetupTests()
 	assert.NoError(t, err)
 
-	resp, _, err := startContainer(cli, ctx)
+	var envArgs []string
+
+	resp, _, err := startContainer(cli, ctx, envArgs)
 	assert.NoError(t, err)
 
 	defer stopContainer(cli, ctx, resp.ID)
@@ -119,7 +148,9 @@ func TestContainerGetFriendCount(t *testing.T) {
 	cli, ctx, err := SetupTests()
 	assert.NoError(t, err)
 
-	resp, _, err := startContainer(cli, ctx)
+	var envArgs []string
+
+	resp, _, err := startContainer(cli, ctx, envArgs)
 	assert.NoError(t, err)
 
 	defer stopContainer(cli, ctx, resp.ID)
