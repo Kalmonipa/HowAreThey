@@ -52,14 +52,38 @@ func SetupRouter(handler *FriendsHandler) *gin.Engine {
 	return r
 }
 
-func isValidDate(dateStr string) bool {
+func CheckAndConvertDateFormat(dateStr string) (string, error) {
 	match, _ := regexp.MatchString(`^\d{2}/\d{2}/\d{4}$`, dateStr)
-	if !match {
-		return false
+	if match {
+		return dateStr, nil
 	}
 
-	_, err := time.Parse("02/01/2006", dateStr)
-	return err == nil
+	match, _ = regexp.MatchString(`^\d{4}-\d{2}-\d{2}$`, dateStr)
+	if !match {
+		err := errors.New("trying to convert an unexpected date format")
+		return "", err
+	}
+
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return "", err
+	}
+	return t.Format("02/01/2006"), nil
+}
+
+func IsValidDate(dateStr string) bool {
+	backslashLayout := "02/01/2006"
+	hyphenedLayout := "2006-01-02"
+
+	_, err := time.Parse(backslashLayout, dateStr)
+	if err != nil {
+		_, err = time.Parse(hyphenedLayout, dateStr)
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 // DELETE /friends/:id
@@ -178,19 +202,33 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 	}
 
 	if newFriend.LastContacted != "" {
-		if !isValidDate(newFriend.LastContacted) {
-			err := errors.New("Last Contacted date must be in DD/MM/YYYY format. " + newFriend.LastContacted + " does not match")
+		if !IsValidDate(newFriend.LastContacted) {
+			err := errors.New("Last Contacted date must be in dd/mm/yyyy or yyyy-mm-dd format. " + newFriend.LastContacted + " does not match")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		convertedLastContacted, err := CheckAndConvertDateFormat(newFriend.LastContacted)
+		if err != nil {
+			err := errors.New("Failed to convert last contacted date to dd/mm/yyyy format.")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		newFriend.LastContacted = convertedLastContacted
 	}
 
 	if newFriend.Birthday != "" {
-		if !isValidDate(newFriend.Birthday) {
-			err := errors.New("Birthday must be in DD/MM/YYYY format. " + newFriend.Birthday + " does not match")
+		if !IsValidDate(newFriend.Birthday) {
+			err := errors.New("Birthday must be in dd/mm/yyyy or yyyy-mm-dd format. " + newFriend.Birthday + " does not match")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		convertedBirthday, err := CheckAndConvertDateFormat(newFriend.Birthday)
+		if err != nil {
+			err := errors.New("Failed to convert birthdate to dd/mm/yyyy format.")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		newFriend.Birthday = convertedBirthday
 	}
 
 	err := models.AddFriend(h.DB, newFriend)
@@ -235,7 +273,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 
 	updatedLastContacted := updatedFriend.LastContacted
 	if updatedLastContacted != "" {
-		if !isValidDate(updatedLastContacted) {
+		if !IsValidDate(updatedLastContacted) {
 			err = errors.New("Date must be in DD/MM/YYYY format." + updatedLastContacted + "does not match.")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -245,7 +283,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 	}
 
 	if updatedFriend.Birthday != "" {
-		if !isValidDate(updatedFriend.Birthday) {
+		if !IsValidDate(updatedFriend.Birthday) {
 			err = errors.New("Date must be in DD/MM/YYYY format." + updatedFriend.Birthday + "does not match.")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

@@ -2,6 +2,7 @@ package test
 
 import (
 	"database/sql"
+	"howarethey/pkg/handler"
 	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
 	"os"
@@ -218,6 +219,37 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.Equal(t, updatedFriend.Name, friend.Name)
 	assert.Equal(t, updatedFriend.LastContacted, friend.LastContacted)
 	assert.Equal(t, updatedFriend.Notes, friend.Notes)
+}
+
+func TestIsValidDate(t *testing.T) {
+	assert.True(t, handler.IsValidDate("02/03/2024"))
+	assert.True(t, handler.IsValidDate("2024-03-02"))
+}
+
+func TestInvalidDate(t *testing.T) {
+	assert.False(t, handler.IsValidDate("24.04.05"))
+	assert.False(t, handler.IsValidDate("invalid"))
+	assert.False(t, handler.IsValidDate("this should fail"))
+}
+
+func TestCheckAndConvertDateFormat(t *testing.T) {
+	response, err := handler.CheckAndConvertDateFormat("2024-03-02")
+	assert.Nil(t, err)
+	assert.Equal(t, "02/03/2024", response)
+
+	response, err = handler.CheckAndConvertDateFormat("02/03/2024")
+	assert.Nil(t, err)
+	assert.Equal(t, "02/03/2024", response)
+}
+
+func TestCheckAndConvertDateFormatInvalid(t *testing.T) {
+	response, err := handler.CheckAndConvertDateFormat("invalid")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", response)
+
+	response, err = handler.CheckAndConvertDateFormat("02.03.2024")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", response)
 }
 
 func containsFriend(friends models.FriendsList, friend models.Friend) bool {
