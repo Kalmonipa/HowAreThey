@@ -21,8 +21,8 @@ var (
 
 	// Mock friends list used in the tests
 	mockFriendsList = models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "2023-06-06", Birthday: "1996-02-23", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "2023-12-12", Birthday: "1996-02-23", Notes: "I think he's Spiderman"},
 	}
 )
 
@@ -62,19 +62,16 @@ func addFriend(mockFriend models.Friend) (statusCode int, body []byte, err error
 }
 
 func getGitBranchName() (string, error) {
-	// Open the repository in the current directory
 	repo, err := git.PlainOpen("../../..")
 	if err != nil {
 		return "", err
 	}
 
-	// Retrieve the HEAD reference
 	ref, err := repo.Head()
 	if err != nil {
 		return "", err
 	}
 
-	// Get the branch name from the reference
 	branchName := ref.Name().Short()
 
 	return branchName, nil

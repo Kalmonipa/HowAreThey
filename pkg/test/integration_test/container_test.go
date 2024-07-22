@@ -15,7 +15,6 @@ func TestDockerDaemonRunning(t *testing.T) {
 	cli, _, err := SetupTests()
 	assert.NoError(t, err)
 
-	// Ping the Docker daemon
 	_, err = cli.Ping(context.Background())
 	assert.NoError(t, err)
 }

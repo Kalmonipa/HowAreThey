@@ -28,8 +28,8 @@ Here is a JSON object of an example person:
 {
   "ID": "1",
   "Name": "Steve Carell",
-  "LastContacted": "06/06/2023",
-  "Birthday": "16/08/1962",
+  "LastContacted": "2023-06-06",
+  "Birthday": "1962-08-16",
   "Notes": "Ask him how his store is going in Marshfield"
 }
 ```
@@ -46,7 +46,7 @@ To update both the Notes and the LastContacted field, you would send something l
 curl "http://localhost:8080/friends/1" \
         --request PUT \
         --header "Content-Type: application/json" \
-        --data "{\"LastContacted\":\"17/04/2024\",\"Notes\":\"His store is going great\"}"
+        --data "{\"LastContacted\":\"2024-04-17\",\"Notes\":\"His store is going great\"}"
 ```
 
 Calling `GET /friends/random` will trigger a random friend to get chosen, their `LastContacted` field to get updated to today and a notification will get sent to your notification service specified in the env var (if any is set)
