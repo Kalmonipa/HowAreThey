@@ -290,7 +290,7 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	var resp map[string]string
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "Last Contacted date must be in dd/mm/yyyy or yyyy-mm-dd format. 15 does not match", resp["error"])
+	assert.Equal(t, "last Contacted date must be in dd/mm/yyyy or yyyy-mm-dd format. 15 does not match", resp["error"])
 
 }
 
@@ -318,7 +318,7 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	var resp map[string]string
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "Birthday must be in dd/mm/yyyy or yyyy-mm-dd format. 23 does not match", resp["error"])
+	assert.Equal(t, "birthday must be in dd/mm/yyyy or yyyy-mm-dd format. 23 does not match", resp["error"])
 
 }
 
@@ -552,6 +552,7 @@ func TestPutLastContactedOnlyHyphenated(t *testing.T) {
 	logger.SetupLogger()
 
 	todaysDate := time.Now().Format("2006-01-02")
+	todaysDateWithCorrectFormat := time.Now().Format("02/01/2006")
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
@@ -590,7 +591,7 @@ func TestPutLastContactedOnlyHyphenated(t *testing.T) {
 	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
 	assert.NoError(t, err)
 	assert.Equal(t, mockFriend.Name, friend.Name)
-	assert.Equal(t, todaysDate, friend.LastContacted)
+	assert.Equal(t, todaysDateWithCorrectFormat, friend.LastContacted)
 	assert.Equal(t, mockFriend.Birthday, friend.Birthday)
 	assert.Equal(t, mockFriend.Notes, friend.Notes)
 }
@@ -652,6 +653,7 @@ func TestPutBirthdayOnlyHyphenated(t *testing.T) {
 	logger.SetupLogger()
 
 	todaysDate := time.Now().Format("2006-01-02")
+	todaysDateWithCorrectFormat := time.Now().Format("02/01/2006")
 	mockFriend := models.Friend{
 		ID:            "1",
 		Name:          "John Wick",
@@ -691,6 +693,6 @@ func TestPutBirthdayOnlyHyphenated(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, mockFriend.Name, friend.Name)
 	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
-	assert.Equal(t, todaysDate, friend.Birthday)
+	assert.Equal(t, todaysDateWithCorrectFormat, friend.Birthday)
 	assert.Equal(t, mockFriend.Notes, friend.Notes)
 }
