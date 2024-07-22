@@ -201,6 +201,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 		return
 	}
 
+	// TODO: TR72 - Turn this into a function
 	if newFriend.LastContacted != "" {
 		if !IsValidDate(newFriend.LastContacted) {
 			err := errors.New("last Contacted date must be in dd/mm/yyyy or yyyy-mm-dd format. " + newFriend.LastContacted + " does not match")
@@ -216,6 +217,7 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 		newFriend.LastContacted = convertedLastContacted
 	}
 
+	// TODO: TR72
 	if newFriend.Birthday != "" {
 		if !IsValidDate(newFriend.Birthday) {
 			err := errors.New("birthday must be in dd/mm/yyyy or yyyy-mm-dd format. " + newFriend.Birthday + " does not match")
@@ -271,6 +273,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		currentFriend.Name = updatedFriend.Name
 	}
 
+	// TODO: TR72
 	updatedLastContacted := updatedFriend.LastContacted
 	if updatedLastContacted != "" {
 		if !IsValidDate(updatedLastContacted) {
@@ -288,6 +291,7 @@ func (h *FriendsHandler) PutFriend(c *gin.Context) {
 		currentFriend.LastContacted = convertedLastContacted
 	}
 
+	// TODO: TR72
 	updatedBirthday := updatedFriend.Birthday
 	if updatedBirthday != "" {
 		if !IsValidDate(updatedBirthday) {
