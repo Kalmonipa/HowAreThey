@@ -14,6 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	// Mock friends list used in the tests
+	mockFriendsList = models.FriendsList{
+		models.Friend{ID: "1", Name: "John Wick", LastContacted: "2023-06-06", Birthday: "1996-02-23", Notes: "Nice guy"},
+		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "2023-12-12", Birthday: "1996-10-20", Notes: "I think he's Spiderman"},
+	}
+)
+
 func setupTestDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
@@ -35,11 +43,6 @@ func setupTestDB() (*sql.DB, error) {
 }
 
 func TestPickRandom(t *testing.T) {
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
-	}
-
 	for i := 0; i < 10; i++ {
 		friend, err := models.PickRandomFriend(mockFriendsList)
 		assert.NoError(t, err)
@@ -55,9 +58,7 @@ func TestPickRandom(t *testing.T) {
 }
 
 func TestCalculateWeight(t *testing.T) {
-	mockFriend := models.Friend{
-		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy",
-	}
+	mockFriend := mockFriendsList[0]
 
 	expectedWeight := 200
 
@@ -73,8 +74,8 @@ func TestCalculateWeightFromFuture(t *testing.T) {
 	futureFriend := models.Friend{
 		ID:            "3",
 		Name:          "Doctor Who",
-		LastContacted: "25/12/2070",
-		Birthday:      "23/02/1996",
+		LastContacted: "2070-12-25",
+		Birthday:      "1996-02-23",
 		Notes:         "Lives in a phonebox",
 	}
 
@@ -90,25 +91,15 @@ func TestCheckBirthday(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "20/10/1996", Notes: "I think he's Spiderman"},
-	}
-
 	mockTodaysDate := time.Date(2020, time.February, 23, 0, 0, 0, 0, time.UTC)
 
 	result := models.CheckBirthdays(mockFriendsList, mockTodaysDate)
 
-	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Name, "John Wick")
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, "John Wick", result[0].Name)
 }
 
 func TestCheckBirthdayNoResults(t *testing.T) {
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "20/10/1996", Notes: "I think he's Spiderman"},
-	}
-
 	mockTodaysDate := time.Date(2020, time.January, 10, 0, 0, 0, 0, time.UTC)
 
 	result := models.CheckBirthdays(mockFriendsList, mockTodaysDate)
@@ -117,17 +108,14 @@ func TestCheckBirthdayNoResults(t *testing.T) {
 }
 
 func TestUpdateLastContact(t *testing.T) {
-	mockFriend := models.Friend{
-		ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy",
-	}
-
+	mockFriend := mockFriendsList[0]
 	todaysDate := time.Date(2023, time.December, 31, 0, 0, 0, 0, time.Local)
 
 	expectedResult := models.Friend{
 		ID:            mockFriend.ID,
 		Name:          mockFriend.Name,
-		LastContacted: "31/12/2023",
-		Birthday:      "23/02/1996",
+		LastContacted: "2023-12-31",
+		Birthday:      "1996-02-23",
 		Notes:         mockFriend.Notes,
 	}
 
@@ -137,11 +125,6 @@ func TestUpdateLastContact(t *testing.T) {
 }
 
 func TestListFriendsNames(t *testing.T) {
-	mockFriendsList := models.FriendsList{
-		models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-		models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
-	}
-
 	expectedResult := []string{"John Wick", "Peter Parker"}
 	unexpectedResult := []string{"John Wick", "Peter Parker", "Shouldn't Exist"}
 
@@ -159,8 +142,8 @@ func TestAddFriend(t *testing.T) {
 
 	newFriend := models.Friend{
 		Name:          "Zark Muckerberg",
-		LastContacted: "15/01/2024",
-		Birthday:      "23/02/1996",
+		LastContacted: "2024-01-15",
+		Birthday:      "1996-02-23",
 		Notes:         "Definitely a lizard person",
 	}
 
@@ -178,8 +161,8 @@ func TestDeleteFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	friendOne := models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"}
-	friendTwo := models.Friend{ID: "2", Name: "Jack Reacher", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Must be on steroids"}
+	friendOne := mockFriendsList[0]
+	friendTwo := mockFriendsList[1]
 
 	err = insertMockFriend(db, friendOne.ID, friendOne.Name, friendOne.LastContacted, friendOne.Birthday, friendOne.Notes)
 	assert.NoError(t, err)
@@ -200,13 +183,13 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	err = insertMockFriend(db, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
+	err = insertMockFriend(db, "1", "John Wick", "2023-06-06", "1996-02-23", "Nice guy")
 	assert.NoError(t, err)
 
 	updatedFriend := models.Friend{
 		Name:          "John Wick",
-		LastContacted: "10/01/2024",
-		Birthday:      "23/02/1996",
+		LastContacted: "2024-01-10",
+		Birthday:      "1996-02-23",
 		Notes:         "Nice guy",
 	}
 
@@ -222,34 +205,14 @@ func TestSqlUpdateFriend(t *testing.T) {
 }
 
 func TestIsValidDate(t *testing.T) {
-	assert.True(t, handler.IsValidDate("02/03/2024"))
 	assert.True(t, handler.IsValidDate("2024-03-02"))
 }
 
 func TestInvalidDate(t *testing.T) {
+	assert.False(t, handler.IsValidDate("02/03/2024"))
 	assert.False(t, handler.IsValidDate("24.04.05"))
 	assert.False(t, handler.IsValidDate("invalid"))
 	assert.False(t, handler.IsValidDate("this should fail"))
-}
-
-func TestCheckAndConvertDateFormat(t *testing.T) {
-	response, err := handler.CheckAndConvertDateFormat("2024-03-02")
-	assert.Nil(t, err)
-	assert.Equal(t, "02/03/2024", response)
-
-	response, err = handler.CheckAndConvertDateFormat("02/03/2024")
-	assert.Nil(t, err)
-	assert.Equal(t, "02/03/2024", response)
-}
-
-func TestCheckAndConvertDateFormatInvalid(t *testing.T) {
-	response, err := handler.CheckAndConvertDateFormat("invalid")
-	assert.NotNil(t, err)
-	assert.Equal(t, "", response)
-
-	response, err = handler.CheckAndConvertDateFormat("02.03.2024")
-	assert.NotNil(t, err)
-	assert.Equal(t, "", response)
 }
 
 func containsFriend(friends models.FriendsList, friend models.Friend) bool {

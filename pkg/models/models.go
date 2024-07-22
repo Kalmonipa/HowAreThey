@@ -32,7 +32,6 @@ type FriendsList []Friend
 
 // Builds the list from the yaml file specified
 func BuildFriendsList(db *sql.DB) (FriendsList, error) {
-	// Query the database
 	rows, err := db.Query("SELECT id, name, lastContacted, birthday, notes FROM friends")
 	if err != nil {
 		logger.LogMessage(logger.LogLevelFatal, "Failed to select from db: %v", err)
@@ -61,7 +60,7 @@ func BuildFriendsList(db *sql.DB) (FriendsList, error) {
 // Calculates the weight of each name based on how many days since last contacted
 // The longer the time since last contact, the higher the chance of them coming up in the selection
 func CalculateWeight(lastContacted string, currDate time.Time) (int, error) {
-	layout := "02/01/2006"
+	layout := "2006-01-02"
 
 	lastContactedDate, err := time.Parse(layout, lastContacted)
 	if err != nil {
@@ -69,16 +68,13 @@ func CalculateWeight(lastContacted string, currDate time.Time) (int, error) {
 		return 0, err
 	}
 
-	// Normalize both dates to the start of the day
 	lastContactedNormalised := time.Date(lastContactedDate.Year(), lastContactedDate.Month(), lastContactedDate.Day(), 0, 0, 0, 0, time.Local)
 	currDateNormalised := time.Date(currDate.Year(), currDate.Month(), currDate.Day(), 0, 0, 0, 0, currDate.Location())
 
-	// Check if lastContacted date is in the future
 	if lastContactedNormalised.After(currDateNormalised) {
 		return 0, fmt.Errorf("lastContacted date %s is in the future. It must be in the past", lastContacted)
 	}
 
-	// Calculate the difference in days
 	difference := currDateNormalised.Sub(lastContactedNormalised)
 	days := int(difference.Hours() / 24)
 
@@ -93,20 +89,18 @@ func CheckBirthdays(friends FriendsList, todaysDate time.Time) FriendsList {
 		content      string
 	)
 
-	// Format the date as DD/MM
-	formattedDate := todaysDate.Format("02/01")
+	// Format the date as DD-MM
+	formattedDate := todaysDate.Format("01-02")
 
 	for _, friend := range friends {
 		if friend.Birthday == "" {
 			continue
 		}
 
-		// Define the layout that matches the format of your date string
-		layout := "02/01/2006"
+		layout := "2006-01-02"
 
-		// Parse the date string into a time.Time type
 		friendsBday, err := time.Parse(layout, friend.Birthday)
-		friendsBdayFormatted := friendsBday.Format("02/01")
+		friendsBdayFormatted := friendsBday.Format("01-02")
 		if err != nil {
 			logger.LogMessage(logger.LogLevelError, "error parsing the data: %v", err)
 			return FriendsList{}
@@ -299,7 +293,7 @@ func UpdateFriend(friendList FriendsList, newFriend *Friend) (FriendsList, error
 }
 
 func UpdateLastContacted(friend Friend, todaysDate time.Time) *Friend {
-	friend.LastContacted = todaysDate.Format("02/01/2006")
+	friend.LastContacted = todaysDate.Format("2006-01-02")
 
 	return &friend
 }

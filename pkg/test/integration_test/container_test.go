@@ -15,7 +15,6 @@ func TestDockerDaemonRunning(t *testing.T) {
 	cli, _, err := SetupTests()
 	assert.NoError(t, err)
 
-	// Ping the Docker daemon
 	_, err = cli.Ping(context.Background())
 	assert.NoError(t, err)
 }
@@ -124,7 +123,9 @@ func TestContainerGetFriendCount(t *testing.T) {
 
 	defer stopContainer(cli, ctx, resp.ID)
 
-	_, _, err = addFriend(mockFriendsList[0])
+	mockFriend := models.Friend{ID: "1", Name: "John Wick", LastContacted: "2023-06-06", Birthday: "1996-02-23", Notes: "Nice guy"}
+
+	_, _, err = addFriend(mockFriend)
 	assert.NoError(t, err)
 
 	statusCode, body, err := performContainerRequest("GET", "/friends/count", nil)

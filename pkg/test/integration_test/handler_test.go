@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"howarethey/pkg/handler"
 	"howarethey/pkg/logger"
 	"howarethey/pkg/models"
@@ -76,8 +77,8 @@ func setupTestEnvironment(isFriendsListPopulated bool) (*gin.Engine, *handler.Fr
 	var mockFriendsList models.FriendsList
 	if isFriendsListPopulated {
 		mockFriendsList = models.FriendsList{
-			models.Friend{ID: "1", Name: "John Wick", LastContacted: "06/06/2023", Birthday: "23/02/1996", Notes: "Nice guy"},
-			models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "12/12/2023", Birthday: "23/02/1996", Notes: "I think he's Spiderman"},
+			models.Friend{ID: "1", Name: "John Wick", LastContacted: "2023-06-06", Birthday: "1996-02-23", Notes: "Nice guy"},
+			models.Friend{ID: "2", Name: "Peter Parker", LastContacted: "2023-12-12", Birthday: "1996-02-23", Notes: "I think he's Spiderman"},
 		}
 	} else {
 		mockFriendsList = models.FriendsList{}
@@ -99,13 +100,17 @@ func TestFriendsBirthday(t *testing.T) {
 
 	response := performHandlerRequest(mockRouter, "GET", "/birthdays", nil)
 
-	todaysDate := time.Now().Format("02/01")
+	todaysDate := time.Now().Format("01-02")
 
 	assert.Equal(t, http.StatusOK, response.Code)
 
-	if todaysDate == "23/02" {
-		expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"14/04/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"14/04/1996","Notes":"I think he's Spiderman"}]`
-		assert.Equal(t, expectedResult, response.Body.String())
+	if todaysDate == "02-23" {
+		expectedResult, err := json.Marshal(mockFriendsList)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		assert.Equal(t, string(expectedResult), response.Body.String())
 	} else {
 		assert.Equal(t, "[]", response.Body.String())
 	}
@@ -130,10 +135,14 @@ func TestFriendsListRoute(t *testing.T) {
 
 	response := performHandlerRequest(router, "GET", "/friends", nil)
 
-	expectedResult := `[{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"},{"ID":"2","Name":"Peter Parker","LastContacted":"12/12/2023","Birthday":"23/02/1996","Notes":"I think he's Spiderman"}]`
+	expectedResult, err := json.Marshal(mockFriendsList)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	assert.Equal(t, http.StatusOK, response.Code)
-	assert.Equal(t, expectedResult, response.Body.String())
+	assert.Equal(t, string(expectedResult), response.Body.String())
 }
 
 // Test GET /friends
@@ -155,10 +164,14 @@ func TestFriendIDRoute(t *testing.T) {
 
 	response := performHandlerRequest(router, "GET", "/friends/id/1", nil)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
+	expectedResult, err := json.Marshal(mockFriendsList[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	assert.Equal(t, http.StatusOK, response.Code)
-	assert.Equal(t, expectedResult, response.Body.String())
+	assert.Equal(t, string(expectedResult), response.Body.String())
 }
 
 // Test GET /friends/name/:name
@@ -168,10 +181,14 @@ func TestFriendNameRoute(t *testing.T) {
 
 	response := performHandlerRequest(router, "GET", "/friends/name/john-wick", nil)
 
-	expectedResult := `{"ID":"1","Name":"John Wick","LastContacted":"06/06/2023","Birthday":"23/02/1996","Notes":"Nice guy"}`
+	expectedResult, err := json.Marshal(mockFriendsList[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	assert.Equal(t, http.StatusOK, response.Code)
-	assert.Equal(t, expectedResult, response.Body.String())
+	assert.Equal(t, string(expectedResult), response.Body.String())
 }
 
 // Test GET /friends/id/:id
@@ -205,7 +222,7 @@ func TestGetRandomFriend(t *testing.T) {
 	assert.NoError(t, err)
 
 	found := false
-	today := time.Now().Format("02/01/2006")
+	today := time.Now().Format("2006-01-02")
 	for _, mockFriend := range mockFriendsHandler.FriendsList {
 		logger.LogMessage(logger.LogLevelDebug, mockFriend.Name)
 		if mockFriend.ID == friendResponse.ID && mockFriend.Name == friendResponse.Name && mockFriend.LastContacted == today {
@@ -224,8 +241,8 @@ func TestAddFriendRoute(t *testing.T) {
 
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
-		LastContacted: "15/01/2024",
-		Birthday:      "23/02/1996",
+		LastContacted: "2024-01-15",
+		Birthday:      "1996-02-23",
 		Notes:         "I don't think she's a real person",
 	}
 	jsonValue, _ := json.Marshal(newFriend)
@@ -275,7 +292,7 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
 		LastContacted: "15",
-		Birthday:      "23/01/1990",
+		Birthday:      "1990-01-23",
 		Notes:         "I don't think she's a real person",
 	}
 	jsonValue, _ := json.Marshal(newFriend)
@@ -290,7 +307,7 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	var resp map[string]string
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "last Contacted date must be in dd/mm/yyyy or yyyy-mm-dd format. 15 does not match", resp["error"])
+	assert.Equal(t, "last Contacted date must be in yyyy-mm-dd format. 15 does not match", resp["error"])
 
 }
 
@@ -302,7 +319,7 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 
 	newFriend := models.Friend{
 		Name:          "Jane Doe",
-		LastContacted: "15/01/1990",
+		LastContacted: "1990-01-15",
 		Birthday:      "23",
 		Notes:         "I don't think she's a real person",
 	}
@@ -318,7 +335,7 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	var resp map[string]string
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "birthday must be in dd/mm/yyyy or yyyy-mm-dd format. 23 does not match", resp["error"])
+	assert.Equal(t, "birthday must be in yyyy-mm-dd format. 23 does not match", resp["error"])
 
 }
 
@@ -330,7 +347,7 @@ func TestDeleteFriendRoute(t *testing.T) {
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
 
-	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "06/06/2023", "23/02/1996", "Nice guy")
+	err = insertMockFriend(mockFriendsHandler.DB, "1", "John Wick", "2023-06-06", "1996-02-23", "Nice guy")
 	assert.NoError(t, err)
 
 	response := performHandlerRequest(mockRouter, "DELETE", "/friends/1", nil)
@@ -353,13 +370,7 @@ func TestPutFriend(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Birthday:      "01/01/1900",
-		Notes:         "Nice guy",
-	}
+	mockFriend := mockFriendsList[0]
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
@@ -375,8 +386,8 @@ func TestPutFriend(t *testing.T) {
 
 	updatedFriend := models.Friend{
 		Name:          "Master Chief",
-		LastContacted: "15/01/2024",
-		Birthday:      "23/02/1996",
+		LastContacted: "2024-01-15",
+		Birthday:      "1996-02-23",
 		Notes:         "Doesn't talk much",
 	}
 	jsonValue, _ := json.Marshal(updatedFriend)
@@ -405,12 +416,7 @@ func TestPutNotesOnly(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Notes:         "Nice guy",
-	}
+	mockFriend := mockFriendsList[0]
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
@@ -452,13 +458,7 @@ func TestPutNameOnly(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Birthday:      "23/02/1996",
-		Notes:         "Nice guy",
-	}
+	mockFriend := mockFriendsList[0]
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
@@ -501,14 +501,8 @@ func TestPutLastContactedOnly(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	todaysDate := time.Now().Format("02/01/2006")
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Birthday:      "23/02/1996",
-		Notes:         "Nice guy",
-	}
+	todaysDate := time.Now().Format("2006-01-02")
+	mockFriend := mockFriendsList[0]
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
@@ -546,70 +540,13 @@ func TestPutLastContactedOnly(t *testing.T) {
 }
 
 // Tests PUT /friends/:id
-// Tests the endpoint when only Last Contacted field is provided and the input uses yyyy-mm-dd format
-func TestPutLastContactedOnlyHyphenated(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	todaysDate := time.Now().Format("2006-01-02")
-	todaysDateWithCorrectFormat := time.Now().Format("02/01/2006")
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "02/01/2003",
-		Birthday:      "23/02/1996",
-		Notes:         "Nice guy",
-	}
-
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
-	assert.NoError(t, err)
-
-	err = insertMockFriend(mockFriendsHandler.DB,
-		mockFriend.ID,
-		mockFriend.Name,
-		mockFriend.LastContacted,
-		mockFriend.Birthday,
-		mockFriend.Notes,
-	)
-	assert.NoError(t, err)
-
-	updatedFriend := models.Friend{
-		LastContacted: todaysDate,
-	}
-	jsonValue, _ := json.Marshal(updatedFriend)
-
-	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
-
-	assert.Equal(t, http.StatusOK, response.Code)
-
-	var resp map[string]string
-	err = json.Unmarshal(response.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "1 updated successfully", resp["message"])
-
-	var friend models.Friend
-	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
-	assert.NoError(t, err)
-	assert.Equal(t, mockFriend.Name, friend.Name)
-	assert.Equal(t, todaysDateWithCorrectFormat, friend.LastContacted)
-	assert.Equal(t, mockFriend.Birthday, friend.Birthday)
-	assert.Equal(t, mockFriend.Notes, friend.Notes)
-}
-
-// Tests PUT /friends/:id
 // Tests the endpoint when only Birthday field is provided
 func TestPutBirthdayOnly(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
 	logger.SetupLogger()
 
-	todaysDate := time.Now().Format("02/01/2006")
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Birthday:      "23/02/1996",
-		Notes:         "Nice guy",
-	}
+	todaysDate := time.Now().Format("2006-01-02")
+	mockFriend := mockFriendsList[0]
 
 	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
 	assert.NoError(t, err)
@@ -643,56 +580,5 @@ func TestPutBirthdayOnly(t *testing.T) {
 	assert.Equal(t, mockFriend.Name, friend.Name)
 	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
 	assert.Equal(t, todaysDate, friend.Birthday)
-	assert.Equal(t, mockFriend.Notes, friend.Notes)
-}
-
-// Tests PUT /friends/:id
-// Tests the endpoint when only Last Contacted field is provided and the input uses yyyy-mm-dd format
-func TestPutBirthdayOnlyHyphenated(t *testing.T) {
-	os.Setenv("TEST_ENV", "true")
-	logger.SetupLogger()
-
-	todaysDate := time.Now().Format("2006-01-02")
-	todaysDateWithCorrectFormat := time.Now().Format("02/01/2006")
-	mockFriend := models.Friend{
-		ID:            "1",
-		Name:          "John Wick",
-		LastContacted: "06/06/2023",
-		Birthday:      "23/02/1996",
-		Notes:         "Nice guy",
-	}
-
-	mockRouter, mockFriendsHandler, err := setupTestEnvironment(true)
-	assert.NoError(t, err)
-
-	err = insertMockFriend(mockFriendsHandler.DB,
-		mockFriend.ID,
-		mockFriend.Name,
-		mockFriend.LastContacted,
-		mockFriend.Birthday,
-		mockFriend.Notes,
-	)
-	assert.NoError(t, err)
-
-	updatedFriend := models.Friend{
-		Birthday: todaysDate,
-	}
-	jsonValue, _ := json.Marshal(updatedFriend)
-
-	response := performHandlerRequest(mockRouter, "PUT", "/friends/1", jsonValue)
-
-	assert.Equal(t, http.StatusOK, response.Code)
-
-	var resp map[string]string
-	err = json.Unmarshal(response.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "1 updated successfully", resp["message"])
-
-	var friend models.Friend
-	err = mockFriendsHandler.DB.QueryRow("SELECT name, lastContacted, birthday, notes FROM friends WHERE id = ?", "1").Scan(&friend.Name, &friend.LastContacted, &friend.Birthday, &friend.Notes)
-	assert.NoError(t, err)
-	assert.Equal(t, mockFriend.Name, friend.Name)
-	assert.Equal(t, mockFriend.LastContacted, friend.LastContacted)
-	assert.Equal(t, todaysDateWithCorrectFormat, friend.Birthday)
 	assert.Equal(t, mockFriend.Notes, friend.Notes)
 }
