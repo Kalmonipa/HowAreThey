@@ -5,7 +5,7 @@ If you define a notification service and pass in a webhook URL, it will send a m
 The message will look something like
 ```
 HowAreThey
-You should get in touch with Jack Reacher. You haven't spoken to them since 06/06/2023.
+You should get in touch with Jack Reacher. You haven't spoken to them since 2023-06-06.
 ```
 
 Currently, this is just intended as a backend web server with a few endpoints, storing the data in a SQLite database. Updating the info is a bit finnicky if you're not used to using CLI/Curl/etc.

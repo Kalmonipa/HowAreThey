@@ -339,6 +339,34 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 
 }
 
+// Test POST /friends
+// Using data that should do SQL injection stuff
+func TestAddFriendRouteSQLInjection(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	newFriend := models.Friend{
+		Name:          "Jane Doe; DROP TABLE friends;",
+		LastContacted: "2024-01-15",
+		Birthday:      "1996-02-23",
+		Notes:         "This shouldn't drop the table",
+	}
+	jsonValue, _ := json.Marshal(newFriend)
+
+	mockRouter, _, err := setupTestEnvironment(true)
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusCreated, response.Code)
+
+	response = performHandlerRequest(mockRouter, "GET", "/friends/count", nil)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t, "1", response.Body.String())
+
+}
+
 // Test DELETE /friend/:id
 func TestDeleteFriendRoute(t *testing.T) {
 	os.Setenv("TEST_ENV", "true")
