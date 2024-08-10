@@ -204,8 +204,6 @@ func TestSqlUpdateFriend(t *testing.T) {
 	assert.Equal(t, updatedFriend.Notes, friend.Notes)
 }
 
-
-
 func TestIsValidDate(t *testing.T) {
 	assert.True(t, handler.IsValidDate("2024-03-02"))
 }
