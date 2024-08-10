@@ -179,6 +179,8 @@ func (h *FriendsHandler) PostNewFriend(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+	} else {
+		newFriend.LastContacted = time.Now().Format("2006-01-02")
 	}
 
 	// TODO: TR72

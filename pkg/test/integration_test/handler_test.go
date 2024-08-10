@@ -308,7 +308,6 @@ func TestAddFriendRouteBadLastContactedData(t *testing.T) {
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "last Contacted date must be in yyyy-mm-dd format. 15 does not match", resp["error"])
-
 }
 
 // Test POST /friends
@@ -336,7 +335,6 @@ func TestAddFriendRouteBadBirthdayData(t *testing.T) {
 	err = json.Unmarshal(response.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, "birthday must be in yyyy-mm-dd format. 23 does not match", resp["error"])
-
 }
 
 // Test POST /friends
@@ -364,6 +362,35 @@ func TestAddFriendRouteSQLInjection(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, response.Code)
 	assert.Equal(t, "1", response.Body.String())
+}
+
+// Test POST /friends
+// Using data that should do SQL injection stuff
+func TestAddFriendRouteNoLastContacted(t *testing.T) {
+	os.Setenv("TEST_ENV", "true")
+	logger.SetupLogger()
+
+	newFriend := models.Friend{
+		Name:          "Jane Doe",
+		LastContacted: "",
+		Birthday:      "",
+		Notes:         "I last talked to her today",
+	}
+	jsonValue, _ := json.Marshal(newFriend)
+
+	mockRouter, _, err := setupTestEnvironment(true)
+	assert.NoError(t, err)
+
+	response := performHandlerRequest(mockRouter, "POST", "/friends", jsonValue)
+
+	assert.Equal(t, http.StatusCreated, response.Code)
+
+	response = performHandlerRequest(mockRouter, "GET", "/friends/name/jane-doe", nil)
+
+	var resp map[string]string
+	err = json.Unmarshal(response.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Now().Format("2006-01-02"), resp["LastContacted"])
 
 }
 
